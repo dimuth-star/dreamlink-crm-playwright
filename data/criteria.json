@@ -1,0 +1,9 @@
+{
+  "validSearch": {
+    "keyword": "Calcey Age",
+    "expectedRowCount": 1
+  },
+  "invalidSearch": {
+    "keyword": "xyzinvalidcriteria123"
+  }
+}

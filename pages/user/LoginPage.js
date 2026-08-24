@@ -4,38 +4,48 @@ const { SELECTORS, TIMEOUTS } = require('../../common/constants');
 class LoginPage {
   constructor(page) {
     this.page = page;
-    this.loginTrigger = page.locator(SELECTORS.loginTrigger);
-    this.emailInput = page.locator('input[type="text"]');
-    this.passwordInput = page.locator('input[type="password"]');
-    this.loginBtn = page.getByRole('button', { name: 'LOGIN' });
-    this.accountTrigger = page.locator(SELECTORS.accountTrigger);
-    this.logout = page.getByText(SELECTORS.logout);
-    
+    this.proceedToLoginBtn = page.getByRole('link', { name: 'Proceed to Login' }).first();
+    this.usernameInput = page.locator(SELECTORS.usernameInput);
+    this.passwordInput = page.locator(SELECTORS.passwordInput);
+    this.signInBtn = page.locator(SELECTORS.signInBtn);
+    this.loginError = page.locator(SELECTORS.loginError);
+    this.dreamLinkApp = page.locator(SELECTORS.dreamLinkApp);
+    this.logoutMenuTrigger = page.locator(SELECTORS.logoutMenuTrigger).filter({ hasText: 'DreamLink' });
+    this.logoutMenuItem = page.locator(SELECTORS.logoutMenuItem).filter({ hasText: 'Logout' });
+    this.logoutConfirmBtn = page.locator(SELECTORS.logoutConfirmBtn);
   }
 
-  async openLoginModal() {
-    await this.loginTrigger.click();
+  async open() {
+    await this.page.goto('/');
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
-  async submitCredentials(email, password) {
-    await this.openLoginModal();
-    await this.emailInput.fill(email);
+  async clickProceedToLogin() {
+    await this.proceedToLoginBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.proceedToLoginBtn.click();
+    await this.page.waitForLoadState('domcontentloaded');
+  }
+
+  async submitCredentials(username, password) {
+    await this.usernameInput.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
-    await this.loginBtn.click();
+    await this.signInBtn.click();
     await this.page.waitForLoadState('domcontentloaded');
   }
 
   async isLoggedIn() {
-    return this.accountTrigger.isVisible({ timeout: 3000 }).catch(() => false);
+    return this.dreamLinkApp.isVisible({ timeout: 3000 }).catch(() => false);
   }
 
-  async login(email, password) {
+  async login(username, password) {
     if (await this.isLoggedIn()) return;
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        await this.submitCredentials(email, password);
-        await expect(this.accountTrigger).toBeVisible({ timeout: TIMEOUTS.default });
+        await this.clickProceedToLogin();
+        await this.submitCredentials(username, password);
+        await expect(this.dreamLinkApp).toBeVisible({ timeout: TIMEOUTS.default });
         return;
       } catch (error) {
         if (attempt === 1) throw error;
@@ -45,23 +55,41 @@ class LoginPage {
     }
   }
 
-  async loginWithInvalidCredentials(email, password) {
-    await this.submitCredentials(email, password);
-    await expect(this.accountTrigger).not.toBeVisible({ timeout: 5000 });
-    await expect(this.loginTrigger).toBeVisible();
+  async loginWithInvalidCredentials(username, password) {
+    await this.clickProceedToLogin();
+    await this.submitCredentials(username, password);
+    await expect(this.loginError).toBeVisible({ timeout: TIMEOUTS.default });
+    await expect(this.loginError).toHaveText('Invalid username or password.');
   }
 
-  async expectLoginFormVisible() {
-    await expect(this.emailInput).toBeVisible();
-    await expect(this.passwordInput).toBeVisible();
-    await expect(this.loginBtn).toBeVisible();
+  async clickDreamLinkApp() {
+    await this.dreamLinkApp.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    const [newPage] = await Promise.all([
+      this.page.context().waitForEvent('page'),
+      this.dreamLinkApp.click(),
+    ]);
+    await newPage.waitForLoadState('domcontentloaded');
+    return newPage;
   }
 
-   async logOut() {
-     await this.accountTrigger.click();
-     await this.logout.click();
-     await this.page.waitForLoadState('load');
-    
+  async expectLoginSuccessful() {
+    await expect(this.page).toHaveURL(/desk/, { timeout: TIMEOUTS.navigation });
+    await expect(this.dreamLinkApp).toBeVisible({ timeout: TIMEOUTS.default });
+  }
+
+  async logout() {
+    await this.logoutMenuTrigger.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.logoutMenuTrigger.click();
+    await this.logoutMenuItem.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.logoutMenuItem.click();
+    await this.logoutConfirmBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.logoutConfirmBtn.click();
+    await this.page.waitForLoadState('domcontentloaded');
+  }
+
+  async expectLoggedOut() {
+    await expect(this.page).toHaveURL(/\/login/, { timeout: TIMEOUTS.navigation });
+    await expect(this.proceedToLoginBtn).toBeVisible({ timeout: TIMEOUTS.default });
   }
 }
 

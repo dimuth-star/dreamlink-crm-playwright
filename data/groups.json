@@ -1,0 +1,13 @@
+{
+  "validSearch": {
+    "keyword": "Partial Rox",
+    "expectedName": "Partial Rox",
+    "expectedCount": "1 of 1"
+  },
+  "multipleSearch": {
+    "keyword": "test"
+  },
+  "invalidSearch": {
+    "keyword": "xyzinvalidgroupname123"
+  }
+}

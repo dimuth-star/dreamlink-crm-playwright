@@ -1,47 +1,55 @@
 const { test, expect } = require('@playwright/test');
-const { HomePage } = require('../../pages/home/HomePage');
 const { LoginPage } = require('../../pages/user/LoginPage');
-const { SettingsPage } = require('../../pages/user/SettingsPage');
+const { GroupsPage } = require('../../pages/groups/GroupsPage');
 const users = require('../../data/users.json');
 
-test.describe('Auth & Language', () => {
-  let homePage;
+test.describe('DreamLink CRM - Login', () => {
   let loginPage;
-  let settingsPage;
+  let groupsPage;
   const userData = users.valid;
-  const userDataInvalid = users.invalid;
+  const invalidData = users.invalid;
 
   test.beforeEach(async ({ page }) => {
-    homePage = new HomePage(page);
     loginPage = new LoginPage(page);
-    settingsPage = new SettingsPage(page);
-    await homePage.open();
+    groupsPage = new GroupsPage(page);
+    await loginPage.open();
   });
 
-  test('TC-01: Verify successful user authentication with valid credentials', async () => {
-    await loginPage.login(userData.email, userData.password);
-    await expect(loginPage.accountTrigger).toHaveText(
-      new RegExp(userData.displayName, 'i')
-    );
+  test('TC-DL-01 | Landing page loads and shows Proceed to Login button', async ({ page }) => {
+    await expect(loginPage.proceedToLoginBtn).toBeVisible();
   });
 
-  test('TC-03: Verify error message for invalid login attemts', async ({page}) => {
-    await loginPage.loginWithInvalidCredentials(userDataInvalid.email, userDataInvalid.password);
-    //await expect(page.getByText('Invalid account or password.')).toBeVisible();
+  test('TC-DL-02 | Clicking Proceed to Login redirects to Keycloak', async ({ page }) => {
+    await loginPage.clickProceedToLogin();
+    await expect(page).toHaveURL(/keycloak/);
+    await expect(loginPage.usernameInput).toBeVisible();
+    await expect(loginPage.passwordInput).toBeVisible();
+    await expect(loginPage.signInBtn).toBeVisible();
   });
 
-  test('TC-02: Verify multilanguage support and UI colalization', async ({page}) => {
-    await loginPage.login(userData.email, userData.password);
-    await settingsPage.switchLanguage(userData.language);
-    await expect(page.getByText(/Help & Support/i)).toBeVisible();
-    await expect(page.getByText('භාෂාව තෝරන්න')).toBeVisible();  
-
+  test('TC-DL-03 | Valid credentials log user in and DreamLink app is visible on desk', async ({ page }) => {
+    await loginPage.login(userData.username, userData.password);
+    await loginPage.expectLoginSuccessful();
   });
 
-  test('TC-17: Verify language can be switched to Sinhala and back to English', async ({ page }) => {
-    await settingsPage.switchLanguage('si');
-    await expect(settingsPage.languageSwitch).toBeVisible();
-    await settingsPage.switchLanguage('en');
-    await expect(page.getByText(/Help & Support/i)).toBeVisible();
+  test('TC-DL-04 | Invalid credentials show error on Keycloak page', async ({ page }) => {
+    await loginPage.loginWithInvalidCredentials(invalidData.username, invalidData.password);
   });
+
+test('TC-DL-05 | DreamSave Groups page loads and shows logged in user', async ({ page }) => {
+  await loginPage.login(userData.username, userData.password);
+  await groupsPage.open();
+  await groupsPage.expectLoaded();
+  await groupsPage.expectGroupListVisible();
+  await groupsPage.expectLoggedInUser(userData.displayName);
+});
+
+test('TC-DL-06 | Logged in user can successfully log out and is redirected to login page', async ({ page }) => {
+  await loginPage.login(userData.username, userData.password);
+  await page.goto('/desk/dl-dreamsave-group');
+  await page.waitForLoadState('domcontentloaded');
+  await loginPage.logout();
+  await loginPage.expectLoggedOut();
+});
+
 });

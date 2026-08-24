@@ -1,12 +1,18 @@
 {
   "valid": {
-    "email": "codewaveautomation@gmail.com",
-    "password": "CodeWaveTeste@001",
-    "displayName": "CodeWaveTester's account",
-    "language": "en"
+    "username": "sa.global@dreamstartlabs.com",
+    "password": "user@123",
+    "displayName": "SA Global"
   },
   "invalid": {
-    "email": "nota.real.user@invalid-test.com",
-    "password": "WrongPassword!000"
+    "username": "invalid@dreamstartlabs.com",
+    "password": "wrongpassword"
+  },
+  "validSearch": {
+    "keyword": "fo.zambia@dreamstartlabs.com",
+    "expectedCount": "1 of 1"
+  },
+  "invalidSearch": {
+    "keyword": "xyzinvaliduser123"
   }
 }

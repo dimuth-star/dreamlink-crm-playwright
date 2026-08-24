@@ -1,0 +1,6 @@
+{
+  "newCriterion": {
+    "baseName": "QA Test Criterion",
+    "description": "Automated test criterion created by Playwright"
+  }
+}
