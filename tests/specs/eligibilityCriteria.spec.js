@@ -1,11 +1,10 @@
-const { SELECTORS } = require('../../common/constants');
 const { test, expect } = require('@playwright/test');
 const { LoginPage } = require('../../pages/user/LoginPage');
 const { EligibilityCriteriaPage } = require('../../pages/eligibilityCriteria/EligibilityCriteriaPage');
 const { CriterionDetailPage } = require('../../pages/eligibilityCriteria/CriterionDetailPage');
 const { CriteriaSearchBar } = require('../../pages/eligibilityCriteria/CriteriaSearchBar');
 const { AddCriterionPage } = require('../../pages/eligibilityCriteria/AddCriterionPage');
-const users = require('../../data/users.json');
+const { getCredentials } = require('../../util/helpers');
 const criteriaData = require('../../data/criteria.json');
 const addCriterionData = require('../../data/addCriterion.json');
 
@@ -15,7 +14,7 @@ test.describe('DreamLink CRM - Eligibility Criteria', () => {
   let criterionDetailPage;
   let criteriaSearchBar;
   let addCriterionPage;
-  const userData = users.valid;
+  const userData = getCredentials();
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
@@ -55,18 +54,18 @@ test.describe('DreamLink CRM - Eligibility Criteria', () => {
   });
 
   test('TC-EC-05 | New criterion can be created and appears in the search results', async ({ page }) => {
-  const uniqueName = `${addCriterionData.newCriterion.baseName}_${Date.now()}`;
-  const { description } = addCriterionData.newCriterion;
+    const uniqueName = `${addCriterionData.newCriterion.baseName}_${Date.now()}`;
+    const { description } = addCriterionData.newCriterion;
 
-  await addCriterionPage.clickCreateCriterion();
-  await addCriterionPage.fillCriterionName(uniqueName);
-  await addCriterionPage.fillDescription(description);
-  await addCriterionPage.saveCriterion();
-  await addCriterionPage.expectSuccessToast(uniqueName);
+    await addCriterionPage.clickCreateCriterion();
+    await addCriterionPage.fillCriterionName(uniqueName);
+    await addCriterionPage.fillDescription(description);
+    await addCriterionPage.saveCriterion();
+    await addCriterionPage.expectSuccessToast(uniqueName);
 
-  await eligibilityCriteriaPage.expectLoaded();
-  await criteriaSearchBar.searchByCriterionName(uniqueName);
-  await criteriaSearchBar.expectExactRowCount(1);
-});
+    await eligibilityCriteriaPage.expectLoaded();
+    await criteriaSearchBar.searchByCriterionName(uniqueName);
+    await criteriaSearchBar.expectExactRowCount(1);
+  });
 
 });

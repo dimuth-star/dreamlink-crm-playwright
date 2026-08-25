@@ -1,8 +1,8 @@
 {
   "valid": {
-    "username": "sa.global@dreamstartlabs.com",
-    "password": "user@123",
-    "displayName": "SA Global"
+    "username": "loaded_from_env",
+    "password": "loaded_from_env",
+    "displayName": "loaded_from_env"
   },
   "invalid": {
     "username": "invalid@dreamstartlabs.com",

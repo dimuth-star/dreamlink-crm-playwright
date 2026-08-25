@@ -2,13 +2,13 @@ const { test, expect } = require('@playwright/test');
 const { LoginPage } = require('../../pages/user/LoginPage');
 const { GroupsPage } = require('../../pages/groups/GroupsPage');
 const { UserProfilePage } = require('../../pages/users/UserProfilePage');
-const users = require('../../data/users.json');
+const { getCredentials } = require('../../util/helpers');
 
 test.describe('DreamLink CRM - User Profile', () => {
   let loginPage;
   let groupsPage;
   let userProfilePage;
-  const userData = users.valid;
+  const userData = getCredentials();
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);

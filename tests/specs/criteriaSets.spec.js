@@ -3,7 +3,7 @@ const { LoginPage } = require('../../pages/user/LoginPage');
 const { EligibilityCriteriaPage } = require('../../pages/eligibilityCriteria/EligibilityCriteriaPage');
 const { CriteriaSetsPage } = require('../../pages/eligibilityCriteria/CriteriaSetsPage');
 const { AddCriteriaSetPage } = require('../../pages/eligibilityCriteria/AddCriteriaSetPage');
-const users = require('../../data/users.json');
+const { getCredentials } = require('../../util/helpers');
 const criteriaSetData = require('../../data/criteriaSet.json');
 
 test.describe('DreamLink CRM - Eligibility Criteria Sets', () => {
@@ -11,7 +11,7 @@ test.describe('DreamLink CRM - Eligibility Criteria Sets', () => {
   let eligibilityCriteriaPage;
   let criteriaSetsPage;
   let addCriteriaSetPage;
-  const userData = users.valid;
+  const userData = getCredentials();
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
@@ -25,19 +25,17 @@ test.describe('DreamLink CRM - Eligibility Criteria Sets', () => {
     await eligibilityCriteriaPage.clickCriteriaSetsTab();
   });
 
- test('TC-ECS-01 | New criteria set can be created with 7 selected criteria and shows success toast', async ({ page }) => {
-  const uniqueName = `${criteriaSetData.newCriteriaSet.baseName}_${Date.now()}`;
-
-  await criteriaSetsPage.clickCreateCriteriaSet();
-  await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
- await addCriteriaSetPage.selectCriteria(criteriaSetData.newCriteriaSet.criteriaCount);
-  await addCriteriaSetPage.saveCriteriaSet();
-  await addCriteriaSetPage.expectSuccessToast();
-
-  await criteriaSetsPage.expectCriteriaSetListPopulated();
-  await criteriaSetsPage.searchBySetName(uniqueName);
-  await criteriaSetsPage.expectExactRowCount(1);
-});
+  test('TC-ECS-01 | New criteria set can be created with 7 selected criteria and shows success toast', async ({ page }) => {
+    const uniqueName = `${criteriaSetData.newCriteriaSet.baseName}_${Date.now()}`;
+    await criteriaSetsPage.clickCreateCriteriaSet();
+    await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
+    await addCriteriaSetPage.selectCriteria(criteriaSetData.newCriteriaSet.criteriaCount);
+    await addCriteriaSetPage.saveCriteriaSet();
+    await addCriteriaSetPage.expectSuccessToast();
+    await criteriaSetsPage.expectCriteriaSetListPopulated();
+    await criteriaSetsPage.searchBySetName(uniqueName);
+    await criteriaSetsPage.expectExactRowCount(1);
+  });
 
   test('TC-ECS-02 | Criteria Sets list is populated after navigating via tab', async ({ page }) => {
     await criteriaSetsPage.expectCriteriaSetListPopulated();

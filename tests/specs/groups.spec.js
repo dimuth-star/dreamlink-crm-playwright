@@ -3,7 +3,7 @@ const { LoginPage } = require('../../pages/user/LoginPage');
 const { GroupsPage } = require('../../pages/groups/GroupsPage');
 const { GroupDetailPage } = require('../../pages/groups/GroupDetailPage');
 const { GroupsSearchBar } = require('../../pages/groups/GroupsSearchBar');
-const users = require('../../data/users.json');
+const { getCredentials } = require('../../util/helpers');
 const groupsData = require('../../data/groups.json');
 
 test.describe('DreamLink CRM - DreamSave Groups', () => {
@@ -11,7 +11,7 @@ test.describe('DreamLink CRM - DreamSave Groups', () => {
   let groupsPage;
   let groupDetailPage;
   let groupsSearchBar;
-  const userData = users.valid;
+  const userData = getCredentials();
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
