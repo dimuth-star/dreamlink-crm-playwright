@@ -70,12 +70,15 @@ saveCriterionBtn: 'Save criterion',
 criterionSuccessToast: 'div.alert.desk-alert.green .alert-message',
 
 // Eligibility Criteria Sets
+criteriaSetRow: 'div[class*="border-row-border"][class*="text-muted-foreground"]',
 criteriaSetsTab: 'a[href="/sets"][data-discover="true"]',
 createCriteriaSetBtn: 'button[data-label="Create Criteria Set"]',
 criteriaSetNameInput: 'input#criteria-set-name',
 criteriaSetCheckbox: 'input.dl-checkbox',
 saveCriteriaSetBtn: 'button:has-text("Save criteria set")',
 criteriaSetSuccessToast: 'div.alert.desk-alert.green .alert-message-container',
+criteriaSetSearchInput: 'input[placeholder="Search by set name"]',
+criteriaSetNoResultsMessage: 'p.text-foreground.text-base',
 };
 
 const TIMEOUTS = {

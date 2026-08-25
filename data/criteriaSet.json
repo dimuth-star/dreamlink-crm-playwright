@@ -1,5 +1,12 @@
 {
   "newCriteriaSet": {
     "baseName": "QA Test Criteria Set"
+  },
+  "validSearch": {
+    "keyword": "FAST Loan Eligibility Set",
+    "expectedRowCount": 1
+  },
+  "invalidSearch": {
+    "keyword": "xyzinvalidcriteriaset123"
   }
 }
