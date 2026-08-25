@@ -1,6 +1,7 @@
 {
   "newCriteriaSet": {
-    "baseName": "QA Test Criteria Set"
+    "baseName": "QA Test Criteria Set",
+    "criteriaCount": 7
   },
   "validSearch": {
     "keyword": "FAST Loan Eligibility Set",

@@ -1,18 +1,18 @@
 const { expect } = require('@playwright/test');
 const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const { BasePage } = require('../BasePage');
 
-class UsersPage {
+class UsersPage extends BasePage {
   constructor(page) {
-    this.page = page;
+    super(page);
     this.pageTitle = page.locator(SELECTORS.usersPageTitle);
-    this.userListRow = page.locator(SELECTORS.userListRow);
-    this.loadingIndicator = page.locator(SELECTORS.userListLoading);
+    this.userListRow = page.locator(SELECTORS.deskListRow);
+    this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
     this.usersNavLink = page.locator(SELECTORS.usersNavLink);
   }
 
   async open() {
-    await this.page.goto('/desk/dl-user');
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.goto('/desk/dl-user');
   }
 
   async clickUsersNav() {
@@ -23,7 +23,7 @@ class UsersPage {
 
   async expectLoaded() {
     await expect(this.page).toHaveURL(/dl-user/, { timeout: TIMEOUTS.navigation });
-    await expect(this.pageTitle).toBeVisible({ timeout: TIMEOUTS.default });
+    await this.expectVisible(this.pageTitle);
   }
 
   async expectUserListPopulated() {

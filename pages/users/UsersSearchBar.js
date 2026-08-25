@@ -5,10 +5,10 @@ class UsersSearchBar {
   constructor(page) {
     this.page = page;
     this.searchInput = page.locator(SELECTORS.userSearchInput);
-    this.loadingIndicator = page.locator(SELECTORS.userListLoading);
+    this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
     this.recordCount = page.locator(SELECTORS.recordCount);
-    this.noResultsMessage = page.locator(SELECTORS.userNoResultsMessage);
-    this.userListRow = page.locator(SELECTORS.userListRow);
+    this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
+    this.userListRow = page.locator(SELECTORS.deskListRow);
   }
 
   async searchByEmail(keyword) {

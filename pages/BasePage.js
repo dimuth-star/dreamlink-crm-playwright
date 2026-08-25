@@ -7,10 +7,11 @@ class BasePage {
     this.page = page;
   }
 
-  async goto(path = '/') {
-    await this.page.goto(path);
-    await this.closePopup();
-  }
+async goto(path = '/') {
+  await this.page.goto(path);
+  await this.page.waitForLoadState('domcontentloaded');
+ 
+}
 
   async waitForPageReady() {
     await this.page.waitForLoadState('load');

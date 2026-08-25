@@ -1,5 +1,5 @@
 const { expect } = require('@playwright/test');
-const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const { SELECTORS, TIMEOUTS, DEFAULTS } = require('../../common/constants');
 
 class CriteriaSearchBar {
   constructor(page) {
@@ -12,7 +12,7 @@ class CriteriaSearchBar {
 async searchByCriterionName(keyword) {
   await this.searchInput.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
   await this.searchInput.fill(keyword);
-  await expect(this.criteriaRow).not.toHaveCount(20, { timeout: TIMEOUTS.default });
+  await expect(this.criteriaRow).not.toHaveCount(DEFAULTS.pageSize, { timeout: TIMEOUTS.default });
 }
 
   async expectExactRowCount(expectedCount) {

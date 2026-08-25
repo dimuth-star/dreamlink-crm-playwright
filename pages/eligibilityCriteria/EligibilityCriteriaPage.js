@@ -1,9 +1,10 @@
 const { expect } = require('@playwright/test');
 const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const { BasePage } = require('../BasePage');
 
-class EligibilityCriteriaPage {
+class EligibilityCriteriaPage extends BasePage {
   constructor(page) {
-    this.page = page;
+    super(page);
     this.criteriaNavLink = page.locator(SELECTORS.eligibilityCriteriaNavLink);
     this.criteriaRow = page.locator(SELECTORS.eligibilityCriteriaRow);
     this.criterionNameLink = page.locator(SELECTORS.criterionNameLink);
@@ -11,8 +12,7 @@ class EligibilityCriteriaPage {
   }
 
   async open() {
-    await this.page.goto('/desk/eligibility-criteria');
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.goto('/desk/eligibility-criteria');
   }
 
   async clickEligibilityCriteriaNav() {
@@ -29,7 +29,7 @@ class EligibilityCriteriaPage {
 
   async expectLoaded() {
     await expect(this.page).toHaveURL(/eligibility-criteria/, { timeout: TIMEOUTS.navigation });
-    await this.criteriaRow.first().waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.expectVisible(this.criteriaRow.first());
   }
 
   async expectCriteriaListPopulated() {

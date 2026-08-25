@@ -30,7 +30,7 @@ test.describe('DreamLink CRM - Eligibility Criteria Sets', () => {
 
   await criteriaSetsPage.clickCreateCriteriaSet();
   await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
-  await addCriteriaSetPage.selectCriteria(7);
+ await addCriteriaSetPage.selectCriteria(criteriaSetData.newCriteriaSet.criteriaCount);
   await addCriteriaSetPage.saveCriteriaSet();
   await addCriteriaSetPage.expectSuccessToast();
 

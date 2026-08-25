@@ -1,5 +1,3 @@
-const BASE_URL = 'https://lk-qa.dreamstartlabs.com';
-
 const SELECTORS = {
   // Landing page
   proceedToLogin: 'a.btn-keycloak',
@@ -13,15 +11,17 @@ const SELECTORS = {
   // Desk page
   dreamLinkApp: 'a[data-id="DreamLink"]',
 
+// Shared desk list-view selectors
+  deskListRow: '.list-row-container[tabindex="1"]',
+  deskLoadingIndicator: '.freeze.flex.justify-center.align-center.text-muted',
+  deskNoResultsMessage: 'div.no-result.text-muted p',
+
 // DreamSave Groups list page
   loggedInUser: 'span.d-block.text-truncate:not(.text-secondary)',
   groupsPageTitle: 'a.title-text[title="DreamSave Groups"]',
-  groupListRow: '.list-row-container[tabindex="1"]',
   recordCount: '.list-count span',
   groupNameLink: 'a.ellipsis[data-doctype="DL DreamSave Group"]',
   groupSearchInput: 'input[data-fieldname="group_name"]',
-  groupListLoading: '.freeze.flex.justify-center.align-center.text-muted',
-  groupNoResultsMessage: 'div.no-result.text-muted p',
 
   // DreamSave Group detail page
   groupNameDetail: '[data-fieldname="group_name"] .control-value.like-disabled-input',
@@ -35,11 +35,8 @@ logoutConfirmBtn: 'button.btn.btn-primary.btn-sm.btn-modal-primary',
   // Users list page
   usersPageTitle: 'a.title-text[title="Users"]',
   usersNavLink: 'a.item-anchor[href="/desk/dl-user"]',
-  userListRow: '.list-row-container[tabindex="1"]',
-  userListLoading: '.freeze.flex.justify-center.align-center.text-muted',
   userNameLink: 'a.ellipsis[data-doctype="DL User"]',
   userSearchInput: 'input[data-fieldname="name"]',
-  userNoResultsMessage: 'div.no-result.text-muted p',
 
   // User detail page
   userFullName: '[data-fieldname="full_name"] .control-value.like-disabled-input',
@@ -48,7 +45,6 @@ logoutConfirmBtn: 'button.btn.btn-primary.btn-sm.btn-modal-primary',
 userProfileMenuBtn: '[aria-label="User Menu"]',
 userProfilePageTitle: '#page-DL\\ User\\ Profile .title-text-form',
 userProfileFullName: '#body',
-userProfileBreadcrumb: 'li',
 
 // Eligibility Criteria page
 eligibilityCriteriaPageTitle: 'a.title-text[title="Eligibility Criteria"]',
@@ -79,6 +75,10 @@ saveCriteriaSetBtn: 'button:has-text("Save criteria set")',
 criteriaSetSuccessToast: 'div.alert.desk-alert.green .alert-message-container',
 criteriaSetSearchInput: 'input[placeholder="Search by set name"]',
 criteriaSetNoResultsMessage: 'p.text-foreground.text-base',
+
+// Products list page
+productsPageTitle: 'a.title-text[title="Product"]',
+productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
 };
 
 const TIMEOUTS = {
@@ -86,4 +86,8 @@ const TIMEOUTS = {
   navigation: 30000,
 };
 
-module.exports = { BASE_URL, SELECTORS, TIMEOUTS };
+const DEFAULTS = {
+  pageSize: 20,
+};
+
+module.exports = { SELECTORS, TIMEOUTS, DEFAULTS };

@@ -9,5 +9,6 @@
   },
   "invalidSearch": {
     "keyword": "xyzinvalidgroupname123"
-  }
+  },
+  "noResultsMessage": "No DreamSave Groups found with matching filters. Clear filters to see all DreamSave Groups."
 }

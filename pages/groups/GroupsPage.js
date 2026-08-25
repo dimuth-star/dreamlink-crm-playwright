@@ -1,23 +1,23 @@
 const { expect } = require('@playwright/test');
 const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const { BasePage } = require('../BasePage');
 
-class GroupsPage {
+class GroupsPage extends BasePage {
   constructor(page) {
-    this.page = page;
+    super(page);
     this.pageTitle = page.locator(SELECTORS.groupsPageTitle);
-    this.groupListRow = page.locator(SELECTORS.groupListRow);
+    this.groupListRow = page.locator(SELECTORS.deskListRow);
     this.loggedInUser = page.locator(SELECTORS.loggedInUser);
     this.recordCount = page.locator(SELECTORS.recordCount);
   }
 
   async open() {
-  await this.page.goto('/desk/dl-dreamsave-group');
-  await this.page.waitForLoadState('domcontentloaded');
-}
+    await this.goto('/desk/dl-dreamsave-group');
+  }
 
   async expectLoaded() {
     await expect(this.page).toHaveURL(/dl-dreamsave-group/, { timeout: TIMEOUTS.navigation });
-    await expect(this.pageTitle).toBeVisible({ timeout: TIMEOUTS.default });
+    await this.expectVisible(this.pageTitle);
   }
 
   async expectLoggedInUser(displayName) {
@@ -31,7 +31,7 @@ class GroupsPage {
     async expectDefaultPageSize(expectedCount) {
   // Wait for loading indicator to be hidden
   await this.page
-    .locator('.freeze.flex.justify-center.align-center')
+    .locator(SELECTORS.deskLoadingIndicator)
     .waitFor({ state: 'hidden', timeout: TIMEOUTS.default });
 
   // Assert count text

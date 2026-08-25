@@ -26,7 +26,7 @@ module.exports = defineConfig({
   retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 2 : undefined,
   timeout: 60000,
-  reporter: [['html'], ['list']],
+  reporter: [['allure-playwright'], ['list']],
   use: sharedUse,
   projects: [
     {

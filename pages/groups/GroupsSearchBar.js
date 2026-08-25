@@ -1,13 +1,14 @@
 const { expect } = require('@playwright/test');
 const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const groupsData = require('../../data/groups.json');
 
 class GroupsSearchBar {
   constructor(page) {
     this.page = page;
     this.searchInput = page.locator(SELECTORS.groupSearchInput);
-    this.loadingIndicator = page.locator(SELECTORS.groupListLoading);
+    this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
     this.recordCount = page.locator(SELECTORS.recordCount);
-    this.noResultsMessage = page.locator(SELECTORS.groupNoResultsMessage);
+    this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
   }
 
   async searchByGroupName(keyword) {
@@ -26,16 +27,14 @@ class GroupsSearchBar {
   }
 
   async expectMultipleResults() {
-    const rows = this.page.locator(SELECTORS.groupListRow);
+    const rows = this.page.locator(SELECTORS.deskListRow);
     const count = await rows.count();
     expect(count).toBeGreaterThan(1);
   }
 
   async expectNoResults() {
     await expect(this.noResultsMessage).toBeVisible({ timeout: TIMEOUTS.default });
-    await expect(this.noResultsMessage).toHaveText(
-      'No DreamSave Groups found with matching filters. Clear filters to see all DreamSave Groups.'
-    );
+    await expect(this.noResultsMessage).toHaveText(groupsData.noResultsMessage);
   }
 }
 

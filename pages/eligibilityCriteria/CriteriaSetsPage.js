@@ -1,9 +1,10 @@
 const { expect } = require('@playwright/test');
-const { SELECTORS, TIMEOUTS } = require('../../common/constants');
+const { SELECTORS, TIMEOUTS, DEFAULTS } = require('../../common/constants');
+const { BasePage } = require('../BasePage');
 
-class CriteriaSetsPage {
+class CriteriaSetsPage extends BasePage {
   constructor(page) {
-    this.page = page;
+    super(page);
     this.createCriteriaSetBtn = page.locator(SELECTORS.createCriteriaSetBtn);
     this.criteriaSetRow = page.locator(SELECTORS.criteriaSetRow);
     this.searchInput = page.locator(SELECTORS.criteriaSetSearchInput);
@@ -25,7 +26,7 @@ class CriteriaSetsPage {
   async searchBySetName(keyword) {
     await this.searchInput.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
     await this.searchInput.fill(keyword);
-    await expect(this.criteriaSetRow).not.toHaveCount(20, { timeout: TIMEOUTS.default });
+    await expect(this.criteriaSetRow).not.toHaveCount(DEFAULTS.pageSize, { timeout: TIMEOUTS.default });
   }
 
   async expectExactRowCount(expectedCount) {
