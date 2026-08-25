@@ -1,163 +1,162 @@
-# Bootcamp Batch 1 — Daraz.lk Playwright Automation
+# DreamLink CRM — Playwright Automation Suite
 
-End-to-end test automation for [Daraz.lk](https://www.daraz.lk/#?) using Playwright with the Page Object Model (POM).
+End-to-end test automation for the DreamLink CRM platform using Playwright with the Page Object Model (POM).
 
-## Project structure
+## Project Structure
 
-```
-bootcampbatch1/
-├── common/constants.js
+crm/
+├── common/constants.js # All selectors, timeouts, and defaults
 ├── data/
-│   ├── users.json            # valid + invalid credentials
-│   └── products.json         # search, filter, and product data
-├── env/qa.env, stag.env
+│ ├── users.json # Test user data (credentials loaded from env)
+│ ├── groups.json # DreamSave Groups test data
+│ ├── criteria.json # Eligibility Criteria test data
+│ ├── addCriterion.json # Add Criterion form data
+│ ├── criteriaSet.json # Criteria Sets test data
+├── env/
+│ └── qa.env # Environment variables (excluded from git)
 ├── pages/
-│   ├── BasePage.js
-│   ├── common/Header.js, SearchBar.js
-│   ├── home/HomePage.js
-│   ├── product/ProductListingPage.js, ProductDetailsPage.js
-│   ├── cart/CartPage.js
-│   └── user/LoginPage.js, AccountPage.js, SettingsPage.js
-├── tests/auth.setup.js         # Saves logged-in session for cart tests
+│ ├── BasePage.js
+│ ├── groups/
+│ │ ├── GroupsPage.js
+│ │ ├── GroupDetailPage.js
+│ │ └── GroupsSearchBar.js
+│ ├── users/
+│ │ ├── UsersPage.js
+│ │ ├── UserDetailPage.js
+│ │ ├── UserProfilePage.js
+│ │ └── UsersSearchBar.js
+│ ├── eligibilityCriteria/
+│ │ ├── EligibilityCriteriaPage.js
+│ │ ├── CriterionDetailPage.js
+│ │ ├── CriteriaSearchBar.js
+│ │ ├── CriteriaSetsPage.js
+│ │ ├── AddCriterionPage.js
+│ │ └── AddCriteriaSetPage.js
+│ ├── products/
+│ │ └── ProductsPage.js
+│ └── user/
+│ └── LoginPage.js
 ├── tests/specs/
-│   ├── home.spec.js          # TC-10 – TC-13
-│   ├── login.spec.js         # TC-01, TC-02, TC-17
-│   ├── auth.spec.js          # TC-14 – TC-16
-│   ├── search.spec.js        # TC-03 – TC-06, TC-18 – TC-22
-│   ├── product.spec.js       # TC-23 – TC-25
-│   └── cart.spec.js          # TC-07 – TC-09, TC-26
+│ ├── login.spec.js
+│ ├── groups.spec.js
+│ ├── users.spec.js
+│ ├── userProfile.spec.js
+│ ├── eligibilityCriteria.spec.js
+│ ├── criteriaSets.spec.js
+│ └── products.spec.js
+├── util/
+│ ├── helpers.js
+│ └── loggers.js
 └── playwright.config.js
-```
 
-## Test cases (26 total)
 
-### Homepage (`home.spec.js`)
+## Test Cases (26 total)
 
-| ID | Test case |
+### Login (`login.spec.js`)
+
+| ID | Test Case |
 |----|-----------|
-| TC-10 | Homepage loads with correct title and URL |
-| TC-11 | Key header elements visible (search, login, cart, language) |
-| TC-12 | Guest cart badge is empty or zero |
-| TC-13 | Logo navigates back to homepage from catalog |
+| TC-DL-01 | Landing page loads and shows Proceed to Login button |
+| TC-DL-02 | Clicking Proceed to Login redirects to Keycloak |
+| TC-DL-03 | Valid credentials log user in and DreamLink app is visible |
+| TC-DL-04 | Invalid credentials show error on Keycloak page |
+| TC-DL-05 | DreamSave Groups page loads and shows logged in user |
+| TC-DL-06 | Logged in user can successfully log out |
 
-### Login & language (`login.spec.js`)
+### DreamSave Groups (`groups.spec.js`)
 
-| ID | Test case |
+| ID | Test Case |
 |----|-----------|
-| TC-01 | Successful login with valid credentials |
-| TC-02 | Multi-language UI (English/Sinhala) |
-| TC-17 | Switch language to Sinhala and back to English |
+| TC-DS-01 | Groups list displays 20 records by default |
+| TC-DS-02 | Clicking the first group navigates to its detail page |
+| TC-DS-03 | Valid search returns exact matching group |
+| TC-DS-04 | Search with broad keyword returns multiple results |
+| TC-DS-05 | Invalid search displays no results message |
 
-### Authentication (`auth.spec.js`)
+### Users (`users.spec.js`)
 
-| ID | Test case |
+| ID | Test Case |
 |----|-----------|
-| TC-14 | Login modal shows email and password fields |
-| TC-15 | Invalid credentials do not log user in |
-| TC-16 | Logout returns user to guest state |
+| TC-US-01 | Users page loads via sidebar navigation and list is populated |
+| TC-US-02 | Clicking the first user navigates to their detail page |
+| TC-US-03 | Valid email search returns exactly one matching user |
+| TC-US-04 | Invalid search keyword displays no results message |
 
-### Search (`search.spec.js`)
+### User Profile (`userProfile.spec.js`)
 
-| ID | Test case |
+| ID | Test Case |
 |----|-----------|
-| TC-03 | Product search by keyword |
-| TC-04 | Search auto-suggestion visibility |
-| TC-05 | Price range filter (Min/Max) |
-| TC-06 | Brand filter on search results |
-| TC-18 | Search URL contains query parameter |
-| TC-19 | Search results display product listing items |
-| TC-20 | Invalid search shows zero results |
-| TC-21 | Suggestion list includes typed keyword |
-| TC-22 | Run consecutive searches with different keywords |
+| TC-UP-01 | Logged in user can navigate to their profile and verify Full Name |
 
-### Product details (`product.spec.js`)
+### Eligibility Criteria (`eligibilityCriteria.spec.js`)
 
-| ID | Test case |
+| ID | Test Case |
 |----|-----------|
-| TC-23 | Product page shows Add to Cart button |
-| TC-24 | Navigating to product updates URL to `/products/` |
-| TC-25 | Product page shows Buy Now button |
+| TC-EC-01 | Eligibility Criteria page loads and list is populated |
+| TC-EC-02 | Clicking the first criterion navigates to its detail page |
+| TC-EC-03 | Valid search returns exactly one matching criterion |
+| TC-EC-04 | Invalid search displays no matching criteria message |
+| TC-EC-05 | New criterion can be created and appears in search results |
 
-### Cart (`cart.spec.js`)
+### Eligibility Criteria Sets (`criteriaSets.spec.js`)
 
-| ID | Test case |
+| ID | Test Case |
 |----|-----------|
-| TC-07 | Add to cart and badge update |
-| TC-08 | Cart persistence after reload |
-| TC-09 | Remove item and badge update |
-| TC-26 | Cart badge increases after adding another product |
+| TC-ECS-01 | New criteria set can be created with 7 criteria and shows success toast |
+| TC-ECS-02 | Criteria Sets list is populated after navigating via tab |
+| TC-ECS-03 | Valid search returns exactly one matching criteria set |
+| TC-ECS-04 | Invalid search displays no matching criteria sets message |
 
-Cart flows (TC-07–TC-09, TC-26) run in **serial** mode because they share cart state.
+### Products (`products.spec.js`)
 
-### Teaching: bad vs good (`NotAGoodPractice.spec.js`)
-
-For **bootcamp / classroom use only**. This spec shows five common mistakes side by side with comments pointing to the correct pattern in this repo.
-
-| Bad example | What to teach | Good counterpart |
-|-------------|---------------|------------------|
-| BAD-01 | Hardcoded URL, credentials, selectors | `LoginPage`, `data/users.json`, `playwright.config.js` baseURL |
-| BAD-02 | Copy-pasted navigation in every test | `HomePage`, `SearchBar`, `data/products.json` |
-| BAD-03 | One test covers login + search + cart | Split specs; `cart.spec.js` + page objects |
-| BAD-04 | Magic numbers, `waitForTimeout`, weak asserts | `search.spec.js` TC-05, `ProductListingPage` |
-| BAD-05 | Test depends on another test’s login | `auth.spec.js` TC-16, `beforeEach`, `auth.setup.js` |
-
-Excluded from CI. Run for discussion only:
-
-```bash
-npx playwright test tests/specs/NotAGoodPractice.spec.js --project=chromium
-```
-
-Then compare with `tests/specs/login.spec.js` and `pages/user/LoginPage.js`.
-
-### Manual / non-automatable
-
-- Graphics quality (subjective visual check)
-- Banner advertisement review
+| ID | Test Case |
+|----|-----------|
+| TC-PR-01 | Manage Products page loads and list is populated |
 
 ## Configuration
 
-**Base URL:** `https://www.daraz.lk`
+**Target Environment:** `https://lk-qa.dreamstartlabs.com`
 
-```bash
-TEST_ENV=stag npx playwright test
-```
+Credentials are loaded from `env/qa.env` — this file is excluded from git.
+Create it locally with:
 
-Update `data/users.json` → `valid` object with your Daraz test account.
+BASE_URL=https://lk-qa.dreamstartlabs.com
+TEST_USERNAME=your_username
+TEST_PASSWORD=your_password
+TEST_DISPLAY_NAME=Your Name
 
-## Authentication setup
 
-Cart tests use a saved login session (`tests/auth.setup.js` → `playwright/.auth/user.json`) so they do not conflict with logout tests running in parallel.
-
-## Running tests
+## Running Tests
 
 ```bash
 npm ci
-npx playwright install --with-deps
+npx playwright install
 
-npm test                  # all tests (setup + chromium + cart + firefox + webkit)
-npm run test:chromium     # guest tests on chromium only
-npm run test:cart         # cart tests with saved session
+# Run full suite
+npm test
 
-npm run test:home
+# Run headed with single worker
+npm run test:headed
+
+# Run individual spec
 npm run test:login
-npm run test:auth
-npm run test:search
-npm run test:product
-npm run test:cart
+npm run test:groups
+npm run test:users
+npm run test:profile
+npm run test:eligibility
+npm run test:criteriasets
+npm run test:products
 
+# View report
 npm run report
 ```
 
-## Page object flow
+## Framework Conventions
 
-```
-HomePage.open()
-  → LoginPage.login() / loginWithInvalidCredentials()
-  → AccountPage.logout()
-  → SearchBar.search() / typeForSuggestions()
-  → ProductListingPage.filterByBrand() / filterByPrice()
-  → ProductDetailsPage.openProduct() / addToCart()
-  → CartPage.expectProductInCart() / removeItem()
-  → SettingsPage.switchLanguage()
-```
-# BootcampTeachingMaterial
+- All selectors centralised in `common/constants.js`
+- All test data in `data/*.json` files — never hardcoded in specs
+- Assertions only in `expectXxx()` methods or spec files
+- `waitFor({ state: 'visible' })` before interactions
+- `waitForLoadState('domcontentloaded')` after navigation
+- No `waitForTimeout` anywhere in the suite
+- Run with `--workers=1` to avoid Keycloak session conflicts
