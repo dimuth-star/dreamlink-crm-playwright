@@ -79,6 +79,20 @@ criteriaSetNoResultsMessage: 'p.text-foreground.text-base',
 // Products list page
 productsPageTitle: 'a.title-text[title="Product"]',
 productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
+
+
+// Add Product page
+addProductPageTitle: '//div[normalize-space()="Product Details"]',
+productNameInput: 'input[data-fieldname="product_name"]',
+productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
+productDescriptionInput: 'textarea[data-fieldname="product_description"]',
+productRulesTitle: '//div[normalize-space()="Rules Settings"]',
+productRulesDropdown: '//button[@title="FAST Credit Rule Set"]',
+productEligibilityCriteriaTitle: '//div[@class="section-head"][normalize-space()="Eligibility Criteria"]',
+productGroupsTypesTitle: '//label[normalize-space()="Group Types"]',
+productDSCriteriaSetSelect: '//div[@class="col grid-static-col col-xs-3"]//input[@placeholder="Eligibility Criteria Set"]',
+
+
 };
 
 const TIMEOUTS = {
