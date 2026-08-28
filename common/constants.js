@@ -79,19 +79,21 @@ criteriaSetNoResultsMessage: 'p.text-foreground.text-base',
 // Products list page
 productsPageTitle: 'a.title-text[title="Product"]',
 productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
-
+productSearchField: '//input[@placeholder="Product Name"]',
 
 // Add Product page
+addProductBtnName: '//button[@data-label="Add Product"]',
 addProductPageTitle: '//div[normalize-space()="Product Details"]',
-productNameInput: 'input[data-fieldname="product_name"]',
+productNameInput: '//input[@class="input-with-feedback form-control bold"]',
 productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
-productDescriptionInput: 'textarea[data-fieldname="product_description"]',
+productDescriptionInput: '//textarea[@type="text"]',
 productRulesTitle: '//div[normalize-space()="Rules Settings"]',
 productRulesDropdown: '//button[@title="FAST Credit Rule Set"]',
 productEligibilityCriteriaTitle: '//div[@class="section-head"][normalize-space()="Eligibility Criteria"]',
 productGroupsTypesTitle: '//label[normalize-space()="Group Types"]',
-productDSCriteriaSetSelect: '//div[@class="col grid-static-col col-xs-3"]//input[@placeholder="Eligibility Criteria Set"]',
-
+productDSCriteriaSetSelect: '//input[@placeholder="Eligibility Criteria Set"]',
+productDSSelectedCriteria: '//p[@title="Dim Seven Test"]',
+productSaveBtn: '//body/div[@class=\'main-section\']/div[@id=\'body\']/div[@id=\'page-DL Product\']/div[@class=\'page-head flex\']/div[@class=\'container\']/div[@class=\'row flex-nowrap align-center page-head-content justify-between\']/div[@class=\'align-center flex standard-items-section\']/div[@class=\'flex col page-actions justify-content-end \']/div[@class=\'standard-actions flex\']/button[@data-label=\'Save\']/span[1]',
 
 };
 

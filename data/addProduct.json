@@ -1,0 +1,6 @@
+{
+  "newProduct": {
+    "productName": "QA Test Product",
+    "productDescription": "Automated test product created by Playwright"
+  }
+}
