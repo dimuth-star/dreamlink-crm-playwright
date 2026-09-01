@@ -94,6 +94,43 @@ productDSCriteriaSetSelect: '//input[@placeholder="Eligibility Criteria Set"]',
 productDSSelectedCriteria: '//p[@title="Dim Seven Test"]',
 productSaveBtn: '//body/div[@class=\'main-section\']/div[@id=\'body\']/div[@id=\'page-DL Product\']/div[@class=\'page-head flex\']/div[@class=\'container\']/div[@class=\'row flex-nowrap align-center page-head-content justify-between\']/div[@class=\'align-center flex standard-items-section\']/div[@class=\'flex col page-actions justify-content-end \']/div[@class=\'standard-actions flex\']/button[@data-label=\'Save\']/span[1]',
 
+
+// Classification — list-view actions
+classificationActionsBtn: 'div.actions-btn-group button[data-toggle="dropdown"]',
+classificationRunMenuItem: 'span.menu-item-label[data-label="Run%20Classification"]',
+
+// Run Classification confirmation modal
+classificationConfirmBtn: '.modal.fade.show .modal-footer button.btn-modal-primary',
+
+// Classification Summary modal
+classificationSummaryPill: '.modal.fade.show span.indicator-pill.orange',
+classificationSummaryText: 'No Groups Classified',
+classificationSummaryCloseBtn: '.modal.fade.show .modal-footer button.btn-modal-primary',
+classificationModalBackdrop: '.modal.fade.show',
+
+// Classification Summary modal — fully eligible (green)
+classificationSummaryPillGreen: '.modal.fade.show span.indicator-pill.green',
+classificationSummaryTextGreen: 'Classification triggered for 1 group across 1 product',
+
+// Groups list — fully eligible badge
+fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
+
+// Leads list page
+leadsPageTitle: 'a.title-text[title="Lead"]',
+leadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
+leadNameLink: 'a.ellipsis[data-doctype="DL Lead"]',
+
+// Lead detail page
+leadNumber: '[data-fieldname="lead_number"] .control-value.like-disabled-input',
+leadGeneratedDate: '[data-fieldname="generated_date"] .control-value.like-disabled-input',
+leadSavingGroupValue: '[data-fieldname="dl_saving_group"] .control-value.like-disabled-input',
+leadTaskStatusPill: 'span.indicator-pill.purple',
+
+// Leads list — active status pill
+leadActiveStatusPill: 'span.filterable.indicator-pill.green.ellipsis',
+// Leads list — number search
+leadNumberSearchInput: 'input[data-fieldname="lead_number"]',
+leadsNoResultsMessage: 'div.no-result p',
 };
 
 const TIMEOUTS = {
