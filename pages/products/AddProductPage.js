@@ -6,12 +6,14 @@ class AddProductPage extends BasePage {
   constructor(page) {
     super(page);
     this.page = page;
-    this.addProductBtn = page.getByRole('button', { name: SELECTORS.addProductBtnName });
+    this.addProductBtn = page.getByRole('button', { name: /add product/i });
     this.productPageTitle = page.locator(SELECTORS.addProductPageTitle);
-    this.productNameInput = page.getByRole('textbox', { name: SELECTORS.productNameInput});
-    this.productDescriptionInput = page.getByRole('textbox', { name: SELECTORS.productDescriptionInput});
-    this.productEligibilityCriteriaSet = page.getByRole('combobox', { name: SELECTORS.productDSCriteriaSetSelect});
-    this.productSaveBtn = page.getByRole('button', { name: SELECTORS.productSaveBtn});
+    this.productNameInput = page.locator('form').filter({ hasText: 'Product Name' }).getByRole('textbox');
+    this.productDescriptionInput = page.locator('form').filter({ hasText: 'Description' }).locator('textarea[type="text"]');
+    this.productDSCriteriaSetSelect = page.locator('.rows > div > .data-row > div:nth-child(4)').first();
+    this.productDSCriteriaSetForm = page.locator('div:nth-child(7) > .section-body > .form-column');
+    this.productSaveBtn = page.getByRole('button', { name: 'Save' });
+    this.productListRow = page.locator(SELECTORS.deskListRow);
   }
 
   async open() {
@@ -34,9 +36,11 @@ class AddProductPage extends BasePage {
     await this.productDescriptionInput.fill(description);
   }
 
-  async selectEligibilityCriteriaSet() {
-    await this.productDSCriteriaSetSelect.waitFor({ state: 'visible', timeout: TIMEOUTS.default }).click();
-    await this.productDSSelectedCriteria.click();
+  async selectEligibilityCriteriaSet(criteriaSetName) {
+    await this.productDSCriteriaSetSelect.waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+    await this.productDSCriteriaSetSelect.click();
+    await this.page.getByText(criteriaSetName).click();
+    await this.productDSCriteriaSetForm.click();
   }
    
   async clickSaveProduct() {
@@ -49,7 +53,6 @@ class AddProductPage extends BasePage {
     await productSearchField.fill(name);
     const count = await this.productListRow.count();
     expect(count).toBeGreaterThan(0);
-
   }
 }  
 

@@ -1,6 +1,7 @@
 {
   "newProduct": {
     "productName": "QA Test Product",
-    "productDescription": "Automated test product created by Playwright"
+    "productDescription": "Automated test product created by Playwright",
+    "criteriaSetName": "Dim Seven Set"
   }
 }

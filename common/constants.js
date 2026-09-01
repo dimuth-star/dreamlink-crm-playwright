@@ -82,9 +82,8 @@ productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
 productSearchField: '//input[@placeholder="Product Name"]',
 
 // Add Product page
-addProductBtnName: '//button[@data-label="Add Product"]',
 addProductPageTitle: '//div[normalize-space()="Product Details"]',
-productNameInput: '//input[@class="input-with-feedback form-control bold"]',
+productNameInput: '/html[1]/body[1]/div[2]/div[1]/div[3]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[3]/div[2]/div[1]/form[1]/div[1]/div[1]/div[2]/div[1]/input[1]',
 productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
 productDescriptionInput: '//textarea[@type="text"]',
 productRulesTitle: '//div[normalize-space()="Rules Settings"]',
