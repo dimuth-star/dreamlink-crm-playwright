@@ -79,11 +79,12 @@ criteriaSetNoResultsMessage: 'p.text-foreground.text-base',
 // Products list page
 productsPageTitle: 'a.title-text[title="Product"]',
 productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
+productNameLink: 'a.ellipsis[data-doctype="DL Product"]',
 productSearchField: '//input[@placeholder="Product Name"]',
 
 // Add Product page
 addProductPageTitle: '//div[normalize-space()="Product Details"]',
-productNameInput: '/html[1]/body[1]/div[2]/div[1]/div[3]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[3]/div[2]/div[1]/form[1]/div[1]/div[1]/div[2]/div[1]/input[1]',
+productNameInput: '.control-input [data-fieldname="product_name"]',
 productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
 productDescriptionInput: '//textarea[@type="text"]',
 productRulesTitle: '//div[normalize-space()="Rules Settings"]',
@@ -92,14 +93,48 @@ productEligibilityCriteriaTitle: '//div[@class="section-head"][normalize-space()
 productGroupsTypesTitle: '//label[normalize-space()="Group Types"]',
 productDSCriteriaSetSelect: '//input[@placeholder="Eligibility Criteria Set"]',
 productDSSelectedCriteria: '//p[@title="Dim Seven Test"]',
-productSaveBtn: '//body/div[@class=\'main-section\']/div[@id=\'body\']/div[@id=\'page-DL Product\']/div[@class=\'page-head flex\']/div[@class=\'container\']/div[@class=\'row flex-nowrap align-center page-head-content justify-between\']/div[@class=\'align-center flex standard-items-section\']/div[@class=\'flex col page-actions justify-content-end \']/div[@class=\'standard-actions flex\']/button[@data-label=\'Save\']/span[1]',
+productSaveBtn: '[data-label="Save"] .alt-underline',
+
+//Geofence List Page
+geofenceListPageTitle: '[data-slot="card-title"]',
+geofenceCreateBtn: '[data-slot="button"]:has-text("New Geofence")',
+geofenceNavLink: 'a.item-anchor[href="/desk/geofences"]',
+geofenceListRow: '[data-slot="scroll-area-viewport"] li',
+geofenceBranchSelect: '[data-slot="button"]:has-text("Branch")',
+geofenceHierarchySelect: '[type="button"]:has-text("Organizational Hierarchy")',
+geofenceOrgSummary: '[aria-label="Geofence summary"]',
+geofenceFoSelect: '[data-slot="button"]:has-text("FO Area")',
+geofenceSearchInput: '[data-slot="input"]',
+geofenceInvalidSearchMessage: '.space-y-0:has-text("No Geofences Found")',
+geofenceBranchFirstItem: '.space-y-0 li',
+geofenceExportBtn: '[data-slot="dropdown-menu-trigger"]',
+geofenceExportDownload: '[data-slot="dropdown-menu-item"]',
+
+// Add Geofence Page
+addGeofencePageTitle: '[data-slot="card-title"]',
+addGeofenceNameInput: '[data-slot="input"][name="name"]',
+geofenceTypeDropdown: '[type="button"][role="combobox"]',
+geofenceParentDropdown: '[type="button"][role="combobox"]',
+overlapPriorityInput: '[data-slot="input"][name="priority"]',
+geofenceDrawBtn: '[data-slot="button"][type="button"]',
+
+// Geofence Detail Page
+geofenceCountryCard: '[data-state="closed"][data-slot="collapsible"]',
+geofenceDetailPageSubtitle: '.min-w-0',
+geofenceDetailPageAssignUser: '[data-slot="tooltip-trigger"]',
+geofenceAssignUserModalTitle: '#radix-_r_7q_',
+geofenceAssignUserCancelBtn: '[data-slot="button"]',
+geofenceBranchTab: '[data-slot="button"]', //take the nth(4) for the branch tab
+geofenceBranchTitle: '.min-w-0:has-text("Branch")',
+geofenceAssignProductCancelBtn: '[data-slot="button"]',
+
 
 };
 
 const TIMEOUTS = {
   default: 20000,
   navigation: 30000,
-};
+}
 
 const DEFAULTS = {
   pageSize: 20,
