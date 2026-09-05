@@ -1,14 +1,23 @@
 {
   "validSearch": {
-    "keyword": "Partial Rox",
-    "expectedName": "Partial Rox",
+    "keyword": "Uhuru Textiles Ltd 0027FB4E-0026",
+    "expectedName": "Uhuru Textiles Ltd 0027FB4E-0026",
     "expectedCount": "1 of 1"
   },
   "multipleSearch": {
-    "keyword": "test"
+    "keyword": "sahara"
   },
   "invalidSearch": {
     "keyword": "xyzinvalidgroupname123"
   },
-  "noResultsMessage": "No DreamSave Groups found with matching filters. Clear filters to see all DreamSave Groups."
+  "noResultsMessage": "No DreamSave Groups found with matching filters. Clear filters to see all DreamSave Groups.",
+  "classificationSearch": {
+    "keyword": "Mwezi Distribution Group 024903D6-0304",
+    "expectedCount": "1 of 1"
+  },
+  "fullyEligibleSearch": {
+    "keyword": "Harambee Farming Limited 0771DC92-1046",
+    "expectedCount": "1 of 1",
+    "groupName": "Harambee Farming Limited 0771DC92-1046"
+  }
 }

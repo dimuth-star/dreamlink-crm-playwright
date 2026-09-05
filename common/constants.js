@@ -128,7 +128,42 @@ geofenceBranchTab: '[data-slot="button"]', //take the nth(4) for the branch tab
 geofenceBranchTitle: '.min-w-0:has-text("Branch")',
 geofenceAssignProductCancelBtn: '[data-slot="button"]',
 
+// Classification — list-view actions
+classificationActionsBtn: 'div.actions-btn-group button[data-toggle="dropdown"]',
+classificationRunMenuItem: 'span.menu-item-label[data-label="Run%20Classification"]',
 
+// Run Classification confirmation modal
+classificationConfirmBtn: '.modal.fade.show .modal-footer button.btn-modal-primary',
+
+// Classification Summary modal
+classificationSummaryPill: '.modal.fade.show span.indicator-pill.orange',
+classificationSummaryText: 'No Groups Classified',
+classificationSummaryCloseBtn: '.modal.fade.show .modal-footer button.btn-modal-primary',
+classificationModalBackdrop: '.modal.fade.show',
+
+// Classification Summary modal — fully eligible (green)
+classificationSummaryPillGreen: '.modal.fade.show span.indicator-pill.green',
+classificationSummaryTextGreen: 'Classification triggered for 1 group across 1 product',
+
+// Groups list — fully eligible badge
+fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
+
+// Leads list page
+leadsPageTitle: 'a.title-text[title="Lead"]',
+leadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
+leadNameLink: 'a.ellipsis[data-doctype="DL Lead"]',
+
+// Lead detail page
+leadNumber: '[data-fieldname="lead_number"] .control-value.like-disabled-input',
+leadGeneratedDate: '[data-fieldname="generated_date"] .control-value.like-disabled-input',
+leadSavingGroupValue: '[data-fieldname="dl_saving_group"] .control-value.like-disabled-input',
+leadTaskStatusPill: 'span.indicator-pill.purple',
+
+// Leads list — active status pill
+leadActiveStatusPill: 'span.filterable.indicator-pill.green.ellipsis',
+// Leads list — number search
+leadNumberSearchInput: 'input[data-fieldname="lead_number"]',
+leadsNoResultsMessage: 'div.no-result p',
 };
 
 const TIMEOUTS = {

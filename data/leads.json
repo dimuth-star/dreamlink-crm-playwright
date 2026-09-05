@@ -1,0 +1,10 @@
+{
+  "validSearch": {
+    "keyword": "LEAD-00024",
+    "expectedCount": "1 of 1"
+  },
+  "invalidSearch": {
+    "keyword": "LEAD-efef"
+  },
+  "noResultsMessage": "No Lead found with matching filters. Clear filters to see all Lead."
+}
