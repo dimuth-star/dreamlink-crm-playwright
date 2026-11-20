@@ -1,0 +1,91 @@
+const { expect } = require("@playwright/test");
+const { SELECTORS, TIMEOUTS } = require("../../common/constants");
+const { BasePage } = require("../BasePage");
+
+class PaperGroupDetailPage extends BasePage {
+  constructor(page) {
+    super(page);
+    this.villageInput = page.locator(SELECTORS.paperGroupVillageInput);
+    this.saveBtn = page.locator(SELECTORS.paperGroupSaveBtn);
+    this.deleteBtn = page.locator(SELECTORS.paperGroupDeleteBtn);
+    this.deleteConfirmBtn = page.locator(SELECTORS.paperGroupDeleteConfirmBtn);
+    this.unsavedIndicator = page
+      .locator(SELECTORS.paperGroupUnsavedIndicator)
+      .filter({ hasText: "Not Saved" });
+    this.toasts = page.locator(SELECTORS.paperGroupToast);
+    this.dreamLinkNumber = page.locator(SELECTORS.paperGroupDreamLinkNumber);
+  }
+
+  async fillVillage(village) {
+    await this.villageInput.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.villageInput.fill(village);
+    // Frappe registers the change on blur
+    await this.villageInput.press("Tab");
+  }
+
+  async save() {
+    await this.saveBtn.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    await this.saveBtn.click();
+  }
+
+  async reload() {
+    await this.page.reload();
+    await this.page.waitForLoadState("domcontentloaded");
+  }
+
+  async deleteGroup() {
+    await this.deleteBtn.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.deleteBtn.click();
+    await this.deleteConfirmBtn.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.deleteConfirmBtn.click();
+  }
+
+  // Assertions
+  async expectLoaded() {
+    await expect(this.page).toHaveURL(/dl-non-dreamsave-group\//, {
+      timeout: TIMEOUTS.navigation,
+    });
+    await expect(this.villageInput).toBeVisible({ timeout: TIMEOUTS.default });
+  }
+
+  async expectDreamLinkNumber(pattern) {
+    await expect(this.dreamLinkNumber).toContainText(new RegExp(pattern), {
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectLocked(lockedMessage) {
+    await expect(this.page.getByText(lockedMessage)).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectSaved() {
+    await expect(this.unsavedIndicator).toBeHidden({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectVillage(village) {
+    await expect(this.villageInput).toHaveValue(village, {
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectDeletedToast(groupName, messageSuffix) {
+    await expect(
+      this.toasts.filter({ hasText: `${groupName} ${messageSuffix}` }).first(),
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+  }
+}
+
+module.exports = { PaperGroupDetailPage };

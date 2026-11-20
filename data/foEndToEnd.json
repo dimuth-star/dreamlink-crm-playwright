@@ -1,0 +1,93 @@
+{
+  "upload": {
+    "baseName": "E2E FO",
+    "groupCount": 1,
+    "region": "QA Region",
+    "district": "QA District",
+    "village": "QA Village",
+    "cycleNumber": 3,
+    "contactName": "QA Contact",
+    "phoneNumber": "0972583695",
+    "contactPosition": "Chair",
+    "previousShareOutValue": 100,
+    "memberCount": 10
+  },
+  "assessment": {
+    "classification": "Verification Ready",
+    "product": "FAST Loan",
+    "resultMessage": "Assessment sent for 1 of 1 selected group(s)",
+    "dreamLinkPattern": "DLK-ZM-\\d+-\\d+",
+    "lockedMessage": "the client assessment has started",
+    "taskCount": 6,
+    "unassignedStatus": "Unassigned",
+    "assignedStatus": "Assigned",
+    "completedStatus": "Completed"
+  },
+  "assignment": {
+    "searchTerm": "fo.zambia",
+    "userName": "FO Zambia",
+    "successMessage": "Tasks successfully assigned to FO Zambia."
+  },
+  "mobile": {
+    "syncTimeoutMs": 300000,
+    "syncPollIntervalMs": 10000,
+    "toasts": {
+      "scheduled": "Task completion date scheduled successfully.",
+      "inProgress": "Task marked as in progress successfully.",
+      "completed": "Task marked as completed successfully."
+    },
+    "tasks": [
+      { "title": "Capture Client Info" },
+      { "title": "Conduct Borrowing Wisely Training One and Two" },
+      { "title": "Conduct Borrowing Wisely Training Three and Four" },
+      { "title": "Conduct Loan and Insurance Training" },
+      { "title": "Complete Group Loan Application" },
+      { "title": "Complete Insurance Registration", "prefilled": true }
+    ]
+  },
+  "client": {
+    "mobileLocal": "0972583695",
+    "idType": "NRC",
+    "idNumber": "123456/12/1",
+    "idIssuedDaysAgo": 30,
+    "dobAgeYears": 18,
+    "dobExtraDays": 30,
+    "members": "10"
+  },
+  "formAnswers": {
+    "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}}, {{mobileIntl}}, {{idNumber}}, {{idType}}; dates: dob, daysAgo:N, daysAhead:N, monthsAhead:N.",
+    "rules": [
+      { "pattern": "\\btpin\\b|tax payer", "answer": { "number": "1234567890" } },
+      { "pattern": "vfz group id", "answer": { "number": "12" } },
+      { "pattern": "politically exposed|\\bpep\\b", "answer": { "bool": "No" } },
+      { "pattern": "date of birth|\\bdob\\b|birth date", "answer": { "date": "dob" } },
+      { "pattern": "issued? date|date of issue|issued on", "answer": { "date": "daysAgo:30" } },
+      { "pattern": "previous cycle.?s share-out amount", "answer": { "number": "100000" } },
+      { "pattern": "requested loan amount", "answer": { "number": "20000" } },
+      { "pattern": "maximum amount allowed", "answer": { "number": "100000" } },
+      { "pattern": "loan term", "answer": { "number": "3" } },
+      { "pattern": "current cycle.?s share-out date", "answer": { "date": "monthsAhead:5" } },
+      { "pattern": "next share-out|upcoming", "answer": { "date": "daysAhead:30" } },
+      { "pattern": "identity type|id type|type of id|identification type", "answer": { "option": "{{idType}}" } },
+      { "pattern": "nrc|id number|identity number|identification number|national id", "answer": { "text": "{{idNumber}}" } },
+      { "pattern": "phone|mobile|telephone|contact number", "answer": { "text": "{{mobileIntl}}" } },
+      { "pattern": "nationality|country code", "answer": { "text": "ZM" } },
+      { "pattern": "written off|defaulted|overdue|arrears", "answer": { "number": "0" } },
+      { "pattern": "present today|members present", "answer": { "number": "{{members}}" } },
+      { "pattern": "new in this saving cycle|new members", "answer": { "number": "0" } },
+      { "pattern": "attended", "answer": { "number": "{{members}}" } },
+      { "pattern": "previous saving cycle|participated in the previous", "answer": { "number": "{{members}}" } },
+      { "pattern": "^number of members|members in group", "answer": { "number": "{{members}}" } },
+      { "pattern": "how many|number of|count", "answer": { "number": "3" } },
+      { "pattern": "amount|value|share|savings", "answer": { "number": "100" } }
+    ],
+    "uniquePerForm": ["position in the group"],
+    "defaults": {
+      "bool": "Yes",
+      "rating": "5",
+      "text": "QA Test",
+      "number": "100",
+      "date": "daysAgo:30"
+    }
+  }
+}
