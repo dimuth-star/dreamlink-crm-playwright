@@ -271,11 +271,66 @@ const SELECTORS = {
   taskDetailReference:
     '[data-fieldname="reference_doc"] .control-value.like-disabled-input',
   taskNumberSearchInput: 'input[data-fieldname="task_number"]',
+
+  // Paper Groups list page
+  // No [title] attribute: it is missing after the SPA redirect that follows a delete
+  paperGroupsPageTitle: "a.title-text:visible",
+  paperGroupsPageTitleText: "Paper Groups",
+  paperGroupDownloadTemplateBtn: 'button[data-label="Download%20template"]',
+  paperGroupUploadBtn: 'button[data-label="Upload%20groups"]',
+  paperGroupBannerText: ".dl-pg-banner-text",
+  paperGroupBannerReviewBtn: ".dl-pg-banner-review-btn",
+
+  // Paper Groups — Upload Paper Groups modal
+  paperGroupUploadModal: ".modal.fade.show",
+  paperGroupPartnerSelect: '.modal.fade.show select[data-fieldname="partner"]',
+  paperGroupFileInput: ".modal.fade.show input.dl-paper-group-file-input",
+  paperGroupUploadSubmitBtn: ".modal.fade.show button.btn-modal-primary",
+
+  // Paper Groups — Review import summary modal
+  paperGroupReviewModalTitle: "Review import summary",
+  paperGroupReviewProceedBtn: ".modal.fade.show button.btn-modal-primary",
+
+  // Paper Groups — list search + toast
+  paperGroupSearchInput:
+    '.standard-filter-section input[data-fieldname="group_name"]',
+  paperGroupNameLink: 'a.ellipsis[data-doctype="DL Non DreamSave Group"]',
+  paperGroupToast: "div.alert.desk-alert",
+
+  // Paper Group detail page
+  paperGroupVillageInput: '.form-layout input[data-fieldname="village"]:visible',
+  paperGroupSaveBtn: 'button[data-label="Save"]:visible',
+  paperGroupDeleteBtn: 'button[data-label="Delete"]:visible',
+  paperGroupUnsavedIndicator: ".indicator-pill:visible",
+  paperGroupDeleteConfirmBtn: ".modal.fade.show button.btn-modal-primary",
+
+  // Paper Groups — Start Assessment (list-view action) and detail
+  paperGroupRowCheckbox: '.list-row-container[tabindex="1"] input[type="checkbox"]',
+  paperGroupActionsMenuItem: "div.actions-btn-group .dropdown-menu a",
+  paperGroupStartAssessmentText: "Start Assessment",
+  paperGroupAssessmentModalTitle: "Confirm Start Assessment",
+  paperGroupAssessmentResultTitle: "Start Assessment Initiated",
+  paperGroupAssessmentProductSelect:
+    '.modal.fade.show select[data-fieldname="product"]',
+  paperGroupDreamLinkNumber:
+    '.form-layout [data-fieldname="dreamlink_number"]:visible',
+
+  // Lead detail — tasks section (assessment / assignment)
+  leadTaskRows: "div.dl-tasks-group div.grid-row",
+  leadTaskStatusPills: "span.dl-task-status-pill",
+  leadAssignTasksBtn: 'button[data-action="assign-tasks"]',
+
+  // Assign Tasks modal (lead detail)
+  assignTasksUserInput: '.modal.fade.show input[data-fieldname="dl_user"]',
+  assignTasksModalTitle: "Assign Tasks - Client Assessment",
+  assignTasksConfirmText: "Assign the following task(s)",
 };
 
 const TIMEOUTS = {
   default: 20000,
   navigation: 30000,
+  shortWait: 5000,
+  sync: 600000, // mobile <-> CRM sync polling (Field Officer end-to-end)
 };
 
 const DEFAULTS = {

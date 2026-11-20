@@ -1,0 +1,64 @@
+{
+  "partner": "Calcey Technologies",
+  "template": {
+    "fileName": "Non-DreamSave-Groups-Template.xlsx",
+    "headers": [
+      "Group Name*",
+      "Region",
+      "District",
+      "Village*",
+      "Cycle Number",
+      "Contact Name",
+      "Phone Number*",
+      "Position of the contact",
+      "Previous Share-out Value",
+      "# of Members"
+    ]
+  },
+  "invalidUpload": {
+    "wrongColumns": {
+      "filePath": "data/uploads/wrongHeaders.xlsx",
+      "rejectionMessage": "The file columns do not match the template."
+    }
+  },
+  "validUpload": {
+    "baseName": "QA PG",
+    "groupCount": 3,
+    "region": "QA Region",
+    "district": "QA District",
+    "village": "QA Village",
+    "cycleNumber": 1,
+    "contactName": "QA Contact",
+    "phoneNumber": "0971234567",
+    "contactPosition": "Chair",
+    "previousShareOutValue": 100,
+    "memberCount": 5,
+    "reviewSummaryMessage": "No warnings or errors — every row is valid.",
+    "importedMessageSuffix": "rows imported as Saving Groups"
+  },
+  "assessment": {
+    "baseName": "QA ASM",
+    "groupCount": 1,
+    "cycleNumber": 3,
+    "classification": "Verification Ready",
+    "product": "FAST Loan",
+    "resultMessage": "Assessment sent for 1 of 1 selected group(s)",
+    "dreamLinkPattern": "DLK-ZM-\\d+-\\d+",
+    "lockedMessage": "the client assessment has started",
+    "leadTaskCount": 6,
+    "unassignedStatus": "Unassigned",
+    "assignedStatus": "Assigned"
+  },
+  "assignment": {
+    "searchTerm": "fo.zambia",
+    "userName": "FO Zambia",
+    "successMessage": "Tasks successfully assigned to FO Zambia."
+  },
+  "editGroup": {
+    "village": "QA Village Edited"
+  },
+  "deleteGroup": {
+    "successMessageSuffix": "deleted successfully."
+  },
+  "noResultsMessage": "No Paper Groups found with matching filters. Clear filters to see all Paper Groups."
+}

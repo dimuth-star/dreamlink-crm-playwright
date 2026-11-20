@@ -14,6 +14,45 @@ class LeadDetailPage {
     this.tasksStagePill = page.locator(SELECTORS.leadTasksStagePill);
     this.tasksCountLabel = page.locator(SELECTORS.leadTasksCountLabel);
     this.leadTaskStatusPills = page.locator(SELECTORS.leadTaskStatusPill);
+    this.taskRows = page.locator(SELECTORS.leadTaskRows);
+    this.taskStatusPills = page.locator(SELECTORS.leadTaskStatusPills);
+    this.assignTasksBtn = page.locator(SELECTORS.leadAssignTasksBtn);
+  }
+
+  async clickAssignTasks() {
+    await this.assignTasksBtn.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.assignTasksBtn.click();
+  }
+
+  async reload() {
+    await this.page.reload();
+    await this.page.waitForLoadState("domcontentloaded");
+  }
+
+  async expectTaskCount(expectedCount) {
+    await expect(this.tasksCountLabel).toContainText(`${expectedCount} tasks`, {
+      timeout: TIMEOUTS.default,
+    });
+    await expect(this.taskStatusPills).toHaveCount(expectedCount, {
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectAllTasksStatus(expectedCount, status) {
+    await expect(this.taskStatusPills).toHaveText(
+      Array(expectedCount).fill(status),
+      { timeout: TIMEOUTS.default },
+    );
+  }
+
+  async expectAllTasksAssignedTo(expectedCount, userName) {
+    await expect(this.taskRows.filter({ hasText: userName })).toHaveCount(
+      expectedCount,
+      { timeout: TIMEOUTS.default },
+    );
   }
 
   async expectLoaded() {
@@ -86,6 +125,30 @@ class LeadDetailPage {
       await expect(pills.nth(i)).toContainText("Assigned");
     }
   }
+
+  // Polls (reloading the lead each time) until each named task's row shows `status`. Matching by title
+  // ignores follow-up tasks the workflow adds afterwards (e.g. "Review Loan Documents").
+  async expectTasksStatusEventually(taskTitles, status, timeout = TIMEOUTS.sync) {
+    await expect
+      .poll(
+        async () => {
+          await this.reload();
+          await this.taskRows
+            .first()
+            .waitFor({ state: "visible", timeout: TIMEOUTS.default })
+            .catch(() => {});
+          const result = {};
+          for (const title of taskTitles) {
+            const row = this.taskRows.filter({ hasText: title });
+            result[title] = (await row.count()) === 1 && (await row.innerText()).includes(status);
+          }
+          return result;
+        },
+        { timeout, intervals: [10000] },
+      )
+      .toEqual(Object.fromEntries(taskTitles.map((t) => [t, true])));
+  }
+
 }
 
 module.exports = { LeadDetailPage };

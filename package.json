@@ -12,14 +12,24 @@
     "test:profile": "npx playwright test tests/specs/userProfile.spec.js --headed --workers=1",
     "test:eligibility": "npx playwright test tests/specs/eligibilityCriteria.spec.js --headed --workers=1",
     "test:criteriasets": "npx playwright test tests/specs/criteriaSets.spec.js --headed --workers=1",
+    "test:papergroups": "npx playwright test tests/specs/paperGroups.spec.js --headed --workers=1",
+    "test:e2e:fo": "npx playwright test --config playwright.e2e.config.js --grep @fo-setup --workers=1 && npx wdio run mobile/wdio.conf.js && npx playwright test --config playwright.e2e.config.js --grep @fo-verify --workers=1",
     "report": "npx playwright show-report",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
+    "@wdio/allure-reporter": "^10.1.0",
+    "@wdio/appium-service": "^10.1.1",
+    "@wdio/cli": "^10.1.0",
+    "@wdio/local-runner": "^10.1.0",
+    "@wdio/mocha-framework": "^10.1.0",
+    "@wdio/spec-reporter": "^10.1.0",
     "allure-commandline": "^2.43.0",
     "allure-playwright": "^3.10.2",
-    "prettier": "^3.9.6"
+    "exceljs": "^4.4.0",
+    "prettier": "^3.9.6",
+    "webdriverio": "^10.1.0"
   }
 }
