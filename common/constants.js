@@ -70,7 +70,7 @@ const SELECTORS = {
   // Eligibility Criteria Sets
   criteriaSetRow:
     'div[class*="border-row-border"][class*="text-muted-foreground"]',
-  criteriaSetsTab: 'a[href="/sets"][data-discover="true"]',
+ criteriaSetsTab: 'a[href="/desk/eligibility-criteria/sets"][data-discover="true"]',
   createCriteriaSetBtn: 'button[data-label="Create Criteria Set"]',
   criteriaSetNameInput: "input#criteria-set-name",
   criteriaSetCheckbox: "input.dl-checkbox",

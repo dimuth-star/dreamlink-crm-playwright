@@ -30,22 +30,21 @@ class FormCreatePage extends BasePage {
   }
 
   async fillSurveyTitle(title) {
-    await this.surveyTitleInput.waitFor({
-      state: "visible",
-      timeout: TIMEOUTS.default,
-    });
-    await this.surveyTitleInput.click();
-    await this.surveyTitleInput.selectText();
-    await this.surveyTitleInput.pressSequentially(title);
-  }
+  await this.surveyTitleInput.waitFor({
+    state: 'visible',
+    timeout: TIMEOUTS.default,
+  });
+  await this.surveyTitleInput.click();
+  await this.surveyTitleInput.fill(title);
+}
 
-  async fillQuestionName(questionName) {
-    await this.questionNameInput
-      .first()
-      .waitFor({ state: "visible", timeout: TIMEOUTS.default });
-    await this.questionNameInput.first().selectText();
-    await this.questionNameInput.first().pressSequentially(questionName);
-  }
+async fillQuestionName(questionName) {
+  await this.questionNameInput
+    .first()
+    .waitFor({ state: 'visible', timeout: TIMEOUTS.default });
+  await this.questionNameInput.first().click();
+  await this.questionNameInput.first().fill(questionName);
+}
 
   async saveAndPublish() {
     await this.saveAndPublishBtn.waitFor({

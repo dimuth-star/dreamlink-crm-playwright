@@ -22,7 +22,7 @@ class GeofenceDetailPage extends BasePage {
       .locator(SELECTORS.geofenceAssignUserCancelBtn)
       .nth(3);
     this.geofenceCountryCard = page.locator(SELECTORS.geofenceCountryCard);
-    this.geofenceMainland = page.getByText("LK - Mainland", { exact: true });
+    this.geofenceMainland = page.getByText("Zambia - Mainland", { exact: true });
     this.geofenceBranchFirstItem = page
       .locator(SELECTORS.geofenceBranchFirstItem)
       .first();

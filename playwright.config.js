@@ -10,10 +10,7 @@ const sharedUse = {
   baseURL,
   locale: "en-US",
   timezoneId: "Asia/Colombo",
-  viewport: null,
-  launchOptions: {
-    args: ["--start-maximized"],
-  },
+  viewport: { width: 1920, height: 1080},
   trace: "retain-on-failure",
   screenshot: "on",
   video: "retain-on-failure",
@@ -33,7 +30,7 @@ module.exports = defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        viewport: null,
+        viewport: { width: 1920, height: 1080},
         deviceScaleFactor: undefined,
       },
     },

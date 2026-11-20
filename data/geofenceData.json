@@ -13,14 +13,14 @@
     "filename": "geofence_export.csv"
   },
   "mapSearch": {
-    "keyword": "zm central",
+    "keyword": "Lusaka Region",
     "expectedCount": 1
   },
   "detailSearch": {
-    "keyword": "branch central",
+    "keyword": "lusaka branch 2",
     "expectedCount": 1
   },
   "multipleKeywordSearch": {
-    "keyword": "ZM Lusaka"
+    "keyword": "lusaka"
   }
 }
