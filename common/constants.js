@@ -310,6 +310,8 @@ const SELECTORS = {
   paperGroupStartAssessmentText: "Start Assessment",
   paperGroupAssessmentModalTitle: "Confirm Start Assessment",
   paperGroupAssessmentResultTitle: "Start Assessment Initiated",
+  // shown instead of the confirmation while a just-imported group is still flagged as a draft
+  paperGroupInvalidSelectionTitle: "Invalid Selection",
   paperGroupAssessmentProductSelect:
     '.modal.fade.show select[data-fieldname="product"]',
   paperGroupDreamLinkNumber:
@@ -330,6 +332,7 @@ const TIMEOUTS = {
   default: 20000,
   navigation: 30000,
   shortWait: 5000,
+  backgroundJob: 120000, // server-side jobs that finish after the UI confirms (e.g. DreamLink number after Start Assessment)
   sync: 600000, // mobile <-> CRM sync polling (Field Officer end-to-end)
 };
 

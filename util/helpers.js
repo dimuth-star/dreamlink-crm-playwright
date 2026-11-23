@@ -26,4 +26,40 @@ function getCredentials() {
   };
 }
 
-module.exports = { loadEnvFile, getCredentials };
+// Field Officer app (mobile/): device, app and FO login, all from env/<TEST_ENV>.env.
+const FO_REQUIRED_ENV = [
+  "ANDROID_UDID",
+  "FO_APP_PACKAGE",
+  "FO_APP_ACTIVITY",
+  "FO_USERNAME",
+  "FO_PASSWORD",
+  "FO_PIN",
+];
+
+function getFoApp() {
+  return {
+    udid: process.env.ANDROID_UDID,
+    appPackage: process.env.FO_APP_PACKAGE,
+    appActivity: process.env.FO_APP_ACTIVITY,
+  };
+}
+
+function getFoCredentials() {
+  return {
+    username: process.env.FO_USERNAME,
+    password: process.env.FO_PASSWORD,
+    pin: process.env.FO_PIN,
+  };
+}
+
+function missingFoEnv() {
+  return FO_REQUIRED_ENV.filter((key) => !process.env[key]);
+}
+
+module.exports = {
+  loadEnvFile,
+  getCredentials,
+  getFoApp,
+  getFoCredentials,
+  missingFoEnv,
+};

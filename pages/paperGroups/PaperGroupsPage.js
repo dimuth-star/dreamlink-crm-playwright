@@ -23,6 +23,12 @@ class PaperGroupsPage extends BasePage {
     this.startAssessmentItem = page
       .locator(SELECTORS.paperGroupActionsMenuItem)
       .filter({ hasText: SELECTORS.paperGroupStartAssessmentText });
+    this.assessmentConfirmModal = page
+      .locator(SELECTORS.paperGroupUploadModal)
+      .filter({ hasText: SELECTORS.paperGroupAssessmentModalTitle });
+    this.invalidSelectionDialog = page
+      .locator(SELECTORS.paperGroupUploadModal)
+      .filter({ hasText: SELECTORS.paperGroupInvalidSelectionTitle });
   }
 
   async open() {
@@ -113,6 +119,27 @@ class PaperGroupsPage extends BasePage {
       timeout: TIMEOUTS.default,
     });
     await this.startAssessmentItem.click();
+  }
+
+  // For a few seconds after an import the backend still flags the new group as a draft, and Start
+  // Assessment answers with "Invalid Selection" instead of the confirmation. Reload, reselect and
+  // retry until the confirmation opens.
+  async startAssessmentWhenReady(groupName) {
+    await expect(async () => {
+      await this.selectFirstGroup();
+      await this.startAssessment();
+      await expect(
+        this.assessmentConfirmModal.or(this.invalidSelectionDialog),
+      ).toBeVisible({ timeout: TIMEOUTS.default });
+      if (await this.invalidSelectionDialog.isVisible()) {
+        await this.open();
+        await this.searchByGroupName(groupName);
+        throw new Error(`"${groupName}" is still flagged as a draft`);
+      }
+    }).toPass({
+      timeout: TIMEOUTS.backgroundJob,
+      intervals: [TIMEOUTS.shortWait],
+    });
   }
 
   async getVisibleGroupCount() {
