@@ -1,6 +1,7 @@
 const { expect } = require("@playwright/test");
 const { SELECTORS, TIMEOUTS } = require("../../common/constants");
 const { BasePage } = require("../BasePage");
+const { sharedWord } = require("../../util/searchKeywords");
 
 class GeofencePage extends BasePage {
   constructor(page) {
@@ -99,6 +100,49 @@ class GeofencePage extends BasePage {
     await this.focusOnMapBtn.click();
   }
 
+  // Geofence names as listed (the country item also shows its geofence count on a second line).
+  async readGeofenceNames() {
+    await expect(
+      this.geofenceItemName.first(),
+      "Geofence list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const texts = await this.geofenceItemName.allInnerTexts();
+    return texts.map((text) => text.split("\n")[0].trim());
+  }
+
+  // The last listed geofence: the most specific level (FO area), never the country item at the top.
+  async readLastGeofenceName() {
+    const names = await this.readGeofenceNames();
+    return names[names.length - 1];
+  }
+
+  // A word shared by at least two listed geofence names, for a search expected to match several.
+  async readBroadKeyword() {
+    const keyword = sharedWord(await this.readGeofenceNames());
+    expect(
+      keyword,
+      "no word is shared by two listed geofence names",
+    ).not.toBeNull();
+    return keyword;
+  }
+
+  geofenceRow(name) {
+    return this.geofenceListRow.filter({
+      has: this.geofenceItemName.and(
+        this.page.getByText(name, { exact: true }),
+      ),
+    });
+  }
+
+  // Each result row has its own "Focus <name> on map" button.
+  async clickFocusOnMapFor(name) {
+    const focusBtn = this.geofenceRow(name).locator(
+      SELECTORS.geofenceFocusOnMapBtn,
+    );
+    await focusBtn.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    await focusBtn.click();
+  }
+
   async clickFirstGeofenceResult() {
     const firstItem = this.geofenceListRow.first();
     await firstItem.waitFor({ state: "visible", timeout: TIMEOUTS.default });
@@ -138,6 +182,20 @@ class GeofencePage extends BasePage {
 
   async expectInvalidSearchMessage() {
     await expect(this.geofenceInvalidMessage).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectGeofenceListed(name) {
+    await expect(this.geofenceRow(name)).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectEveryResultContains(keyword) {
+    await expect(
+      this.geofenceListRow.filter({ hasNotText: keyword }),
+    ).toHaveCount(0, {
       timeout: TIMEOUTS.default,
     });
   }

@@ -1,9 +1,6 @@
 {
-  "searchInput": {
-    "search": "region"
-  },
   "searchInvalidInput": {
-    "search": "invalid"
+    "keywordPrefix": "zz-no-match-"
   },
   "addGeofence": {
     "geofenceName": "Test Geofence",
@@ -12,15 +9,8 @@
   "exportGeofence": {
     "filename": "geofence_export.csv"
   },
-  "mapSearch": {
-    "keyword": "Lusaka Region",
-    "expectedCount": 1
-  },
   "detailSearch": {
     "keyword": "lusaka branch 2",
     "expectedCount": 1
-  },
-  "multipleKeywordSearch": {
-    "keyword": "lusaka"
   }
 }

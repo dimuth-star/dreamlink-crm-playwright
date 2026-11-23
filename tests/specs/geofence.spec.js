@@ -6,6 +6,7 @@ const {
   GeofenceDetailPage,
 } = require("../../pages/geofences/GeofenceDetailPage");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const geofenceData = require("../../data/geofenceData.json");
 
 test.describe("DreamLink CRM - Geofence", () => {
@@ -40,19 +41,22 @@ test.describe("DreamLink CRM - Geofence", () => {
     await geofencePage.expectFoDataExists();
   });
 
-  test("TC-GF-04 | Search for a Geofence by a single keyword and verify the search results", async ({
+  test("TC-GF-04 | Searching a geofence name read from the list returns that geofence and only matching results", async ({
     page,
   }) => {
-    await geofencePage.searchGeofenceByName(geofenceData.searchInput.search);
-    await geofencePage.expectListPopulated();
+    const keyword = await geofencePage.readLastGeofenceName();
+    await geofencePage.searchGeofenceByName(keyword);
+    await geofencePage.expectEveryResultContains(keyword);
+    await geofencePage.expectGeofenceListed(keyword);
   });
 
   test("TC-GF-05 | Search for a Geofence by an invalid keyword and verify the No Geofence Message is displayed", async ({
     page,
   }) => {
-    await geofencePage.searchGeofenceByName(
-      geofenceData.searchInvalidInput.search,
+    const keyword = noMatchKeyword(
+      geofenceData.searchInvalidInput.keywordPrefix,
     );
+    await geofencePage.searchGeofenceByName(keyword);
     await geofencePage.expectInvalidSearchMessage();
   });
 
@@ -88,9 +92,10 @@ test.describe("DreamLink CRM - Geofence", () => {
   test("TC-GF-10 | Selecting a geofence from search results renders the map correctly", async ({
     page,
   }) => {
-    await geofencePage.searchGeofenceByName(geofenceData.mapSearch.keyword);
-    await geofencePage.expectResultCount(geofenceData.mapSearch.expectedCount);
-    await geofencePage.clickFocusOnMap();
+    const geofenceName = await geofencePage.readLastGeofenceName();
+    await geofencePage.searchGeofenceByName(geofenceName);
+    await geofencePage.expectGeofenceListed(geofenceName);
+    await geofencePage.clickFocusOnMapFor(geofenceName);
     await geofencePage.expectMapVisible();
   });
 
@@ -108,11 +113,9 @@ test.describe("DreamLink CRM - Geofence", () => {
   test("TC-GF-12 | Search with a broad keyword returns multiple results all containing the keyword", async ({
     page,
   }) => {
-    await geofencePage.searchGeofenceByName(
-      geofenceData.multipleKeywordSearch.keyword,
-    );
-    await geofencePage.expectAllResultsContainKeyword(
-      geofenceData.multipleKeywordSearch.keyword,
-    );
+    const keyword = await geofencePage.readBroadKeyword();
+    await geofencePage.searchGeofenceByName(keyword);
+    await geofencePage.expectEveryResultContains(keyword);
+    await geofencePage.expectAllResultsContainKeyword(keyword);
   });
 });
