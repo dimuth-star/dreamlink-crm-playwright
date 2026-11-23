@@ -4,6 +4,7 @@ const { GroupsPage } = require("../../pages/groups/GroupsPage");
 const { GroupDetailPage } = require("../../pages/groups/GroupDetailPage");
 const { GroupsSearchBar } = require("../../pages/groups/GroupsSearchBar");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const groupsData = require("../../data/groups.json");
 
 test.describe("DreamLink CRM - DreamSave Groups", () => {
@@ -38,28 +39,29 @@ test.describe("DreamLink CRM - DreamSave Groups", () => {
     await groupDetailPage.expectGroupDetailName(selectedGroupName);
   });
 
-  test("TC-DS-03 | Valid search returns exact matching group", async ({
+  test("TC-DS-03 | Searching a group name read from the list returns that group and only matching rows", async ({
     page,
   }) => {
-    const { keyword, expectedName, expectedCount } = groupsData.validSearch;
+    const keyword = await groupsPage.readFirstGroupName();
     await groupsSearchBar.searchByGroupName(keyword);
-    await groupsSearchBar.expectResultCount(expectedCount);
-    await groupsSearchBar.expectGroupVisible(expectedName);
+    await groupsSearchBar.expectAllResultsContain(keyword);
+    await groupsSearchBar.expectGroupVisible(keyword);
   });
 
-  test("TC-DS-04 | Search with broad keyword returns multiple results", async ({
+  test("TC-DS-04 | Search with a word shared by several listed groups returns multiple matching results", async ({
     page,
   }) => {
-    const { keyword } = groupsData.multipleSearch;
+    const keyword = await groupsPage.readBroadKeyword();
     await groupsSearchBar.searchByGroupName(keyword);
+    await groupsSearchBar.expectAllResultsContain(keyword);
     await groupsSearchBar.expectMultipleResults();
   });
 
   test("TC-DS-05 | Invalid search displays no results message", async ({
     page,
   }) => {
-    const { keyword } = groupsData.invalidSearch;
+    const keyword = noMatchKeyword(groupsData.invalidSearch.keywordPrefix);
     await groupsSearchBar.searchByGroupName(keyword);
-    await groupsSearchBar.expectNoResults();
+    await groupsSearchBar.expectNoResults(groupsData.noResultsMessage);
   });
 });

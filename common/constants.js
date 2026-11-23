@@ -19,7 +19,8 @@ const SELECTORS = {
   // DreamSave Groups list page
   loggedInUser: "span.d-block.text-truncate:not(.text-secondary)",
   groupsPageTitle: 'a.title-text[title="DreamSave Groups"]',
-  recordCount: ".list-count span",
+  // list paginator range, e.g. "1–20 of 148" (replaced the old ".list-count" label in the new build)
+  recordCount: ".dl-pager-range span",
   groupNameLink: 'a.ellipsis[data-doctype="DL DreamSave Group"]',
   groupSearchInput: 'input[data-fieldname="group_name"]',
 

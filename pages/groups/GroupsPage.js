@@ -1,6 +1,7 @@
 const { expect } = require("@playwright/test");
 const { SELECTORS, TIMEOUTS } = require("../../common/constants");
 const { BasePage } = require("../BasePage");
+const { sharedWord } = require("../../util/searchKeywords");
 
 class GroupsPage extends BasePage {
   constructor(page) {
@@ -48,6 +49,33 @@ class GroupsPage extends BasePage {
     // Assert rendered row count
     const rows = await this.groupListRow.count();
     expect(rows).toBe(expectedCount);
+  }
+
+  // A group name to search for, read from the loaded list (no fixed record needed).
+  async readFirstGroupName() {
+    const firstName = this.groupListRow
+      .first()
+      .locator(SELECTORS.groupNameLink);
+    await expect(
+      firstName,
+      "DreamSave Groups list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstName.innerText()).trim();
+  }
+
+  // A word shared by at least two group names on the loaded page, for a search expected to match several.
+  async readBroadKeyword() {
+    const names = this.groupListRow.locator(SELECTORS.groupNameLink);
+    await expect(
+      names.first(),
+      "DreamSave Groups list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const keyword = sharedWord(await names.allInnerTexts());
+    expect(
+      keyword,
+      "no word is shared by two group names on the first page",
+    ).not.toBeNull();
+    return keyword;
   }
 
   async clickFirstGroup() {

@@ -1,23 +1,15 @@
 {
-  "validSearch": {
-    "keyword": "Mulonga Uuzwide",
-    "expectedName": "Mulonga Uuzwide",
-    "expectedCount": "1 of 1"
-  },
-  "multipleSearch": {
-    "keyword": "test"
-  },
   "invalidSearch": {
-    "keyword": "xyzinvalidgroupname123"
+    "keywordPrefix": "zz-no-match-"
   },
   "noResultsMessage": "No matching groups found.",
   "classificationSearch": {
     "keyword": "L2",
-    "expectedCount": "1 of 1"
+    "expectedCount": 1
   },
   "fullyEligibleSearch": {
     "keyword": "Tugwashane B Dare To Discover",
-    "expectedCount": "1 of 1",
+    "expectedCount": 1,
     "groupName": "Tugwashane B Dare To Discover"
   }
 }
