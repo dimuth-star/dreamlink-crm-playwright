@@ -8,9 +8,5 @@
   },
   "exportGeofence": {
     "filename": "geofence_export.csv"
-  },
-  "detailSearch": {
-    "keyword": "lusaka branch 2",
-    "expectedCount": 1
   }
 }

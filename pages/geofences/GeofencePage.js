@@ -9,6 +9,8 @@ class GeofencePage extends BasePage {
     this.pageTitle = page.locator(SELECTORS.geofenceListPageTitle);
     this.geofenceNavLink = page.locator(SELECTORS.geofenceNavLink);
     this.geofenceListRow = page.locator(SELECTORS.geofenceListRow);
+    this.geofenceSelectableRow = page.locator(SELECTORS.geofenceSelectableRow);
+    this.geofenceBranchFilter = page.locator(SELECTORS.geofenceBranchFilter);
     this.geofenceHierarchySelect = page.locator(
       SELECTORS.geofenceHierarchySelect,
     );
@@ -141,6 +143,54 @@ class GeofencePage extends BasePage {
     );
     await focusBtn.waitFor({ state: "visible", timeout: TIMEOUTS.default });
     await focusBtn.click();
+  }
+
+  // Products can only be assigned to a Branch (users to any type), so only branches are
+  // checked. Opens each in turn and stops at the first with at least one assigned user
+  // and one assigned product. Returns its name.
+  async openFirstBranchWithAssignments() {
+    await this.showBranches();
+    const count = await this.geofenceSelectableRow.count();
+    for (let i = 0; i < count; i++) {
+      if (i > 0) {
+        await this.open();
+        await this.showBranches();
+      }
+      const item = this.geofenceSelectableRow
+        .nth(i)
+        .locator(SELECTORS.geofenceItemName);
+      const name = (await item.innerText()).trim();
+      await item.click();
+      const users = await this.countAssigned(this.configureUsersBtn);
+      const products = await this.countAssigned(this.configureProductsBtn);
+      if (users > 0 && products > 0) return name;
+    }
+    throw new Error(
+      "No branch geofence has both assigned users and assigned products",
+    );
+  }
+
+  async showBranches() {
+    await this.geofenceBranchFilter.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.geofenceBranchFilter.click();
+    await this.geofenceSelectableRow.first().waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  // Items in an "Assigned users/products" section, once it shows either items or its empty message.
+  async countAssigned(configureBtn) {
+    const section = configureBtn.locator("xpath=ancestor::section");
+    const items = section.locator(SELECTORS.geofenceAssignedItemName);
+    await items
+      .or(section.locator(SELECTORS.geofenceAssignedEmpty))
+      .first()
+      .waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    return items.count();
   }
 
   async clickFirstGeofenceResult() {

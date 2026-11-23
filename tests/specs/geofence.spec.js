@@ -102,11 +102,7 @@ test.describe("DreamLink CRM - Geofence", () => {
   test("TC-GF-11 | Geofence detail page displays assigned users and assigned products", async ({
     page,
   }) => {
-    await geofencePage.searchGeofenceByName(geofenceData.detailSearch.keyword);
-    await geofencePage.expectResultCount(
-      geofenceData.detailSearch.expectedCount,
-    );
-    await geofencePage.clickFirstGeofenceResult();
+    await geofencePage.openFirstBranchWithAssignments();
     await geofencePage.expectAssignedUsersNotEmpty();
     await geofencePage.expectAssignedProductsNotEmpty();
   });

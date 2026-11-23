@@ -170,6 +170,12 @@ const SELECTORS = {
     'button[aria-label="Configure product assignments"]',
 
   geofenceAssignedItemName: "div.truncate.text-sm.font-medium",
+  // list type filter "Branch" (exact: "Sub-branch" also contains the word)
+  geofenceBranchFilter: '[data-slot="button"]:text-is("Branch")',
+  // a geofence row that opens its detail panel (not the collapsible country header)
+  geofenceSelectableRow: "ul.space-y-0 li[aria-selected]",
+  // "No assigned users" / "No assigned products" in an empty assignment section
+  geofenceAssignedEmpty: "div.text-muted-foreground.py-2.text-sm",
   geofenceDetailBackBtn: 'button:has-text("Back")',
 
   // Classification — list-view actions
