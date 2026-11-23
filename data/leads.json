@@ -2,8 +2,5 @@
   "validSearch": {
     "expectedCount": 1
   },
-  "invalidSearch": {
-    "keyword": "LEAD-efef"
-  },
   "noResultsMessage": "No Leads found with matching filters. Clear filters to see all Leads."
 }
