@@ -57,6 +57,7 @@ util/loggers.js            logStep / logInfo / logError console wrappers.
 util/runState.js           Hand-off file between the three TC-FO steps (e2e-run/runState.json, git-ignored).
 util/clientDataGenerator.js  Run-date-relative dates and +260 phone formatting for the FO forms.
 util/formAnswerRules.js    Pure: which answer each FO form question gets (fixture rules). `npm run test:form-rules`.
+util/searchKeywords.js     Pure: run-time search keywords (noMatchKeyword, sharedWord). `npm run test:search-keywords`.
 util/surveyQuestions.js    Pure: classifies the FO app's SurveyJS questions from one page-source snapshot.
 util/uiTree.js             Minimal parser for the UiAutomator2 page-source XML.
 common/mobileSelectors.js  FO app selectors (MOBILE), UI copy they match on (MOBILE_TEXT), MOBILE_TIMEOUTS, KEYCODES.
@@ -85,9 +86,9 @@ numbering from the highest existing ID:
 | `groups.spec.js` | `TC-DS` | 01–05 |
 | `users.spec.js` | `TC-US` | 01–04 |
 | `userProfile.spec.js` | `TC-UP` | 01 |
-| `eligibilityCriteria.spec.js` | `TC-EC` | 01–05 |
-| `criteriaSets.spec.js` | `TC-ECS` | 01–04 |
-| `products.spec.js` | `TC-PR` | 01–03 |
+| `eligibilityCriteria.spec.js` | `TC-EC` | 01–06 |
+| `criteriaSets.spec.js` | `TC-ECS` | 01–05 |
+| `products.spec.js` | `TC-PR` | 01–05 |
 | `geofence.spec.js` | `TC-GF` | 01–12 |
 | `classification.spec.js` | `TC-CL` | 01–03 |
 | `leads.spec.js` | `TC-LD` | 01–03 |
@@ -164,8 +165,7 @@ effect of unrelated work.
 
 - All selector strings live in `common/constants.js` under `SELECTORS`, grouped by a `//`
   comment per screen. Nothing else in `pages/` or `tests/` holds a raw selector string — the two
-  exceptions are `ProductsPage` (`'[id="page-List/DL Product/List"]'`) and the hardcoded
-  no-results text in `CriteriaSetsPage.expectNoResults()`.
+  exception is `ProductsPage` (`'[id="page-List/DL Product/List"]'`).
 - Prefer stable attribute CSS: `[data-fieldname="..."]`, `[data-doctype="..."]`,
   `[data-slot="..."]`, `[data-label="..."]`, `[aria-label="..."]`, `#id`.
 - Desk list pages share generic selectors — reuse them instead of adding duplicates:
@@ -289,25 +289,43 @@ Each file is an object of named **scenario blocks**, destructured in the spec:
 
 ```json
 {
-  "validSearch": { "keyword": "LEAD-00050", "expectedCount": "1 of 1" },
-  "invalidSearch": { "keyword": "LEAD-efef" },
-  "noResultsMessage": "No Lead found with matching filters. Clear filters to see all Lead."
+  "validSearch": { "expectedCount": 1 },
+  "invalidSearch": { "keywordPrefix": "zz-no-match-" },
+  "noResultsMessage": "No Leads found with matching filters. Clear filters to see all Leads."
 }
 ```
 
-Recurring block names: `validSearch`, `invalidSearch`, `multipleSearch`, `noResultsMessage`, and
-`new<Entity>` for create flows. Pick a descriptive name when a module needs more
-(`classificationSearch`, `fullyEligibleSearch`, `dataCorrectSearch`, `mapSearch`).
+Recurring block names: `validSearch`, `invalidSearch`, `noResultsMessage`, and `new<Entity>` /
+`<groupType><Entity>` for create flows (`dreamSaveCriterion`, `nonDreamSaveSet`). Pick a descriptive
+name when a module needs more (`classificationSearch`, `fullyEligibleSearch`, `dataCorrectSearch`).
 
-Two different count conventions are in play — match whichever the module already uses:
+Counts are **numbers** asserted with `toHaveCount` against a row locator (`deskListRow` on desk
+lists). The old `"1 of 1"` label is gone in the new build; `SELECTORS.recordCount` now points at the
+list pager (`"1–20 of 148"`) and is only used for the page-size check.
 
-- **String** `"1 of 1"`, asserted with `toContainText` against the desk `recordCount` label.
-  Used by groups, users, leads, preLeads, tasks.
-- **Number** `1`, asserted with `toHaveCount` against a row locator. Used by criteria,
-  criteriaSet, forms, geofence.
+Expected UI copy (no-results messages, toast text, dialog titles) belongs in the JSON fixture, not
+in the page object.
 
-Expected UI copy (no-results messages, toast text) belongs in the JSON fixture, not in the page
-object. `CriteriaSetsPage.expectNoResults()` is the one place that still violates this.
+### Search tests never pin a record (data-independent search)
+
+QA data is cleared and the app redeployed regularly, so search fixtures hold **no record values**:
+
+- **Create flows search what they created**: the create test searches its own `Date.now()`-unique
+  name (TC-EC-05/06, TC-ECS-01/05, TC-PR-02, TC-FM-05).
+- **Search-only tests read the keyword from the loaded list** with a `readFirst…()` / `readLast…()`
+  method on the list page object (e.g. `LeadsPage.readFirstLeadNumber()`), which fails with
+  "<Module> list is empty: nothing to search for" if there is nothing to read. Unique keys (lead,
+  pre lead and task number, user email) expect **exactly 1 row**; names (which may repeat) expect
+  the record listed and **every row containing the keyword** (`expectAllResultsContain`).
+- **Broad-keyword searches** (TC-DS-04, TC-GF-12) use `readBroadKeyword()`: a word shared by at
+  least two listed names (`sharedWord` in `util/searchKeywords.js`).
+- **No-results searches** use `noMatchKeyword(prefix)` (prefix + `Date.now()`), which can never
+  match. Only the prefix is in the fixture.
+- Put the "every row contains" check **before** "record is listed": the discovered record is on
+  screen before the filter applies, so only the first check proves the search ran.
+
+Still state-dependent (need a record in a given state, not just any record): TC-CL-01..03
+(classification groups) and TC-GF-11 (a geofence with assigned users and products).
 
 ### Paper Groups (`TC-PG`) — module-specific gotchas
 
@@ -440,21 +458,31 @@ const uniqueName = `${formsData.createForm.baseName} ${Math.floor(Math.random() 
 
 Follow the `Date.now()` variant for new create tests — it is collision-free and sorts.
 
+New-build form details the create tests rely on:
+
+- **Criteria / criteria sets** have a Group Type radio (DreamSave / Non-DreamSave). It filters the
+  criterion attributes and the criteria a set can include, so pick it first. True/False attributes
+  switch the Value control to a dropdown and the condition to `is`. Older Non-DreamSave criteria
+  marked "Invalid" are not selectable in sets.
+- **Products**: Product Type is fixed to Loan; Credit Rule Set has one option; the Group Types table
+  has one fixed row per group type, each offering only sets of that type. A non-zero Auto-Approval
+  Threshold opens an "Update Auto-Approval Threshold" confirmation on Save. Product Code is a
+  DreamSave matching code, so tests use `QA` + timestamp, which no real request carries.
+
 ### Cleanup expectations
 
 There is **no teardown anywhere** — no `afterEach`, no API cleanup. Records created by
-`TC-EC-05`, `TC-ECS-01`, `TC-FM-05` and `TC-PR-02` persist in the QA tenant. Consequences to keep
+`TC-EC-05/06`, `TC-ECS-01/05`, `TC-FM-05` and `TC-PR-02` persist in the QA tenant (products have no
+Delete; each TC-PR-02 run leaves a `QA Test Product_<ts>` in the product dropdowns). Consequences to keep
 in mind:
 
 - Unique-name create tests are safely re-runnable but leave residue. That is the accepted
   trade-off; do not add a cleanup layer without asking.
-- `TC-PR-02` uses a **fixed** product name (`"Dim Test Product"`) and so is *not* re-runnable as
-  written. Use a unique name for any new create test.
 - `TC-CL-02` / `TC-CL-03` mutate group classification state and need the manual reset noted in
   their `// PRE-CONDITION` comments.
-- Some fixtures pin record IDs that exist only in the current QA data (`LEAD-00050`,
-  `TASK-00649`, `PRE-00289`, `"QAForm 1343"`, named groups and geofences). If a search test
-  fails, check the fixture value against the tenant before touching the page object.
+- Only the classification fixtures (`classificationSearch`, `fullyEligibleSearch`,
+  `dataCorrectSearch`) and `geofenceData.detailSearch` still name QA records; every other search
+  reads its keyword at run time (see *Search tests never pin a record*).
 
 ## 5. Running Tests
 
@@ -491,6 +519,7 @@ npm run test:e2e:fo
 FO_STRICT=1 npm run test:e2e:fo                      # bash: no mobile retries (stability runs)
 $env:FO_STRICT="1"; npm run test:e2e:fo              # PowerShell
 npm run test:form-rules                              # pure FO answer-rule check, no device
+npm run test:search-keywords                         # pure search-keyword helper check, no browser
 
 # Switch environment (default is qa)
 TEST_ENV=qa npx playwright test --workers=1          # bash
