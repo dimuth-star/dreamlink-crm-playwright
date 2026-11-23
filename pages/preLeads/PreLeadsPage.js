@@ -6,6 +6,7 @@ class PreLeadsPage {
     this.page = page;
     this.pageTitle = page.locator(SELECTORS.preLeadsPageTitle);
     this.preLeadNameLink = page.locator(SELECTORS.preLeadNameLink);
+    this.preLeadListRow = page.locator(SELECTORS.deskListRow);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
   }
 
@@ -31,6 +32,18 @@ class PreLeadsPage {
     });
     const rowCount = await this.preLeadNameLink.count();
     expect(rowCount).toBeGreaterThan(0);
+  }
+
+  // A pre lead number to search for, read from the loaded list (no fixed record needed).
+  async readFirstPreLeadNumber() {
+    const firstNumber = this.preLeadListRow
+      .first()
+      .locator(SELECTORS.preLeadNameLink);
+    await expect(
+      firstNumber,
+      "Pre leads list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstNumber.innerText()).trim();
   }
 
   async clickFirstPreLead() {

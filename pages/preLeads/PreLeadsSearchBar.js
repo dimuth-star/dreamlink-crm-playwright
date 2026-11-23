@@ -11,7 +11,7 @@ class PreLeadsSearchBar extends BasePage {
       SELECTORS.preLeadSavingGroupSearchInput,
     );
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
-    this.recordCount = page.locator(SELECTORS.recordCount);
+    this.preLeadListRow = page.locator(SELECTORS.deskListRow);
     this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
   }
 
@@ -35,8 +35,9 @@ class PreLeadsSearchBar extends BasePage {
     });
   }
 
+  // number of rows the search returned
   async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+    await expect(this.preLeadListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
   }

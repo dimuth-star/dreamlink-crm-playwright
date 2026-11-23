@@ -234,7 +234,7 @@ const SELECTORS = {
     'span.badge.badge-secondary[title="Data Correction Required"]',
 
   // Pre Leads list page
-  preLeadsPageTitle: 'a.title-text[title="Pre Lead"]',
+  preLeadsPageTitle: 'a.title-text[title="Pre Leads"]',
   preLeadsNavLink: 'a.item-anchor[href="/desk/dl-pre-lead"]',
   preLeadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
   preLeadNameLink: 'a.ellipsis[data-doctype="DL Pre Lead"]',
