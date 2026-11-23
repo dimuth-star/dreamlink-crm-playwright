@@ -243,7 +243,8 @@ test.describe("DreamLink CRM - Tasks", () => {
   duplicate record: `test("TC-FM-05 | ...", { retries: 0 }, async ({ page }) => { ... })`.
 - Multi-step flows get short `//` comments marking the phases (see `classification.spec.js`).
 - Manual pre-conditions are documented as a `// PRE-CONDITION: ...` comment immediately above
-  the test (e.g. a group that must be reset to *Not Classified* before `TC-CL-02` can pass).
+  the test. A test that needs a record in a given state finds it at run time and calls
+  `test.skip(!found, "<why>")` when QA has none (see `TC-CL-02/03`).
 
 ### Mobile (Field Officer app) conventions
 
@@ -297,7 +298,7 @@ Each file is an object of named **scenario blocks**, destructured in the spec:
 
 Recurring block names: `validSearch`, `invalidSearch`, `noResultsMessage`, and `new<Entity>` /
 `<groupType><Entity>` for create flows (`dreamSaveCriterion`, `nonDreamSaveSet`). Pick a descriptive
-name when a module needs more (`classificationSearch`, `fullyEligibleSearch`, `dataCorrectSearch`).
+name when a module needs more (`activeWorkflowSearch`, `fullyEligibleSearch`, `dataCorrectionSearch`).
 
 Counts are **numbers** asserted with `toHaveCount` against a row locator (`deskListRow` on desk
 lists). The old `"1 of 1"` label is gone in the new build; `SELECTORS.recordCount` now points at the
@@ -324,8 +325,22 @@ QA data is cleared and the app redeployed regularly, so search fixtures hold **n
 - Put the "every row contains" check **before** "record is listed": the discovered record is on
   screen before the filter applies, so only the first check proves the search ran.
 
-Still state-dependent (need a record in a given state, not just any record): TC-CL-01..03
-(classification groups) and TC-GF-11 (a geofence with assigned users and products).
+Tests that need a record **in a given state** pick it at run time too:
+
+- **TC-GF-11** filters the list to Branches (products can only be assigned to a Branch; users to any
+  type) and opens the first with at least one assigned user and one assigned product.
+- **TC-CL-01** takes the saving groups of Active DreamSave leads (Leads list URL filter) and uses the
+  first whose products all have a workflow; classifying it reports "No Groups Classified".
+- **TC-CL-02 / TC-CL-03** look for a product still *Not Classified* (groups list Eligibility Score
+  filter + the "Products and Eligibility" badges): 7/7 for Fully Eligible; 5/7 or 6/7 failing only
+  Backup Status / Members with Images for Data Correction. The product card (group → Products tab)
+  must say "No workflows have started", and the group must have no lead **and no pre lead** (a pre
+  lead blocks classification with "workflow already in progress" but the Products tab does not count
+  it). When QA has no such group the test is **skipped** with a reason; each run that classifies uses
+  up one group.
+- **Classification is asynchronous** in the new build: the summary says "Classification triggered for
+  N group across N product" and the list's product badge changes later, so the result is asserted on
+  that product's line with `TIMEOUTS.backgroundJob` (`ClassificationPage.expectProductStatus`).
 
 ### Paper Groups (`TC-PG`) — module-specific gotchas
 
@@ -478,11 +493,10 @@ in mind:
 
 - Unique-name create tests are safely re-runnable but leave residue. That is the accepted
   trade-off; do not add a cleanup layer without asking.
-- `TC-CL-02` / `TC-CL-03` mutate group classification state and need the manual reset noted in
-  their `// PRE-CONDITION` comments.
-- Only the classification fixtures (`classificationSearch`, `fullyEligibleSearch`,
-  `dataCorrectSearch`) and `geofenceData.detailSearch` still name QA records; every other search
-  reads its keyword at run time (see *Search tests never pin a record*).
+- `TC-CL-02` / `TC-CL-03` classify a group for real (a lead or pre lead is created), so each run
+  that is not skipped uses up one suitable group on QA.
+- No fixture names a QA record any more; every search and every state-dependent test reads its
+  record at run time (see *Search tests never pin a record*).
 
 ## 5. Running Tests
 
