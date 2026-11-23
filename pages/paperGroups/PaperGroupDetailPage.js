@@ -57,10 +57,24 @@ class PaperGroupDetailPage extends BasePage {
     await expect(this.villageInput).toBeVisible({ timeout: TIMEOUTS.default });
   }
 
-  async expectDreamLinkNumber(pattern) {
-    await expect(this.dreamLinkNumber).toContainText(new RegExp(pattern), {
-      timeout: TIMEOUTS.default,
-    });
+  // The DreamLink number is written by a background job after Start Assessment and can lag behind the
+  // "Assessment sent" dialog. The open form does not refresh by itself, so reload until the number shows.
+  async expectDreamLinkNumber(pattern, timeout = TIMEOUTS.backgroundJob) {
+    const numberPattern = new RegExp(pattern);
+    await expect
+      .poll(
+        async () => {
+          await this.dreamLinkNumber.waitFor({
+            state: "visible",
+            timeout: TIMEOUTS.default,
+          });
+          const text = await this.dreamLinkNumber.innerText();
+          if (!numberPattern.test(text)) await this.reload();
+          return text;
+        },
+        { timeout, intervals: [TIMEOUTS.shortWait] },
+      )
+      .toMatch(numberPattern);
   }
 
   async expectLocked(lockedMessage) {

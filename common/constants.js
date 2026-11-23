@@ -330,6 +330,7 @@ const TIMEOUTS = {
   default: 20000,
   navigation: 30000,
   shortWait: 5000,
+  backgroundJob: 120000, // server-side jobs that finish after the UI confirms (e.g. DreamLink number after Start Assessment)
   sync: 600000, // mobile <-> CRM sync polling (Field Officer end-to-end)
 };
 
