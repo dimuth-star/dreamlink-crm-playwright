@@ -1,13 +1,18 @@
 {
-  "newCriteriaSet": {
+  "dreamSaveSet": {
     "baseName": "QA Test Criteria Set",
+    "description": "Automated DreamSave criteria set created by Playwright",
+    "groupType": "DreamSave",
     "criteriaCount": 7
   },
-  "validSearch": {
-    "keyword": "Non-DreamSave Eligibility Set",
-    "expectedRowCount": 1
+  "nonDreamSaveSet": {
+    "baseName": "QA Test NDS Criteria Set",
+    "description": "Automated Non-DreamSave criteria set created by Playwright",
+    "groupType": "Non-DreamSave",
+    "criteriaCount": 5
   },
   "invalidSearch": {
-    "keyword": "xyzinvalidcriteriaset123"
-  }
+    "keywordPrefix": "zz-no-match-"
+  },
+  "noResultsMessage": "No matching eligibility criteria sets."
 }

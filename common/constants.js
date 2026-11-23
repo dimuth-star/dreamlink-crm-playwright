@@ -78,6 +78,11 @@ const SELECTORS = {
   createCriteriaSetBtn: 'button[data-label="Create Criteria Set"]',
   criteriaSetNameInput: "input#criteria-set-name",
   criteriaSetCheckbox: "input.dl-checkbox",
+  criteriaSetDescriptionInput: "input#criteria-set-description",
+  // "Available criteria" list: only criteria of the selected group type, each a label with checkbox + name
+  criteriaSetAvailableList: '[role="region"][aria-label="Available criteria"]',
+  criteriaSetAvailableItem: "label:has(input.dl-checkbox)",
+  criteriaSetItemName: "span.font-medium",
   saveCriteriaSetBtn: 'button:has-text("Save criteria set")',
   criteriaSetSuccessToast:
     "div.alert.desk-alert.green .alert-message-container",

@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test } = require("@playwright/test");
 const { LoginPage } = require("../../pages/user/LoginPage");
 const {
   EligibilityCriteriaPage,
@@ -10,6 +10,7 @@ const {
   AddCriteriaSetPage,
 } = require("../../pages/eligibilityCriteria/AddCriteriaSetPage");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const criteriaSetData = require("../../data/criteriaSet.json");
 
 test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
@@ -31,21 +32,34 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
     await eligibilityCriteriaPage.clickCriteriaSetsTab();
   });
 
-  test("TC-ECS-01 | New criteria set can be created with 7 selected criteria and shows success toast", async ({
-    page,
-  }) => {
-    const uniqueName = `${criteriaSetData.newCriteriaSet.baseName}_${Date.now()}`;
-    await criteriaSetsPage.clickCreateCriteriaSet();
-    await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
-    await addCriteriaSetPage.selectCriteria(
-      criteriaSetData.newCriteriaSet.criteriaCount,
-    );
-    await addCriteriaSetPage.saveCriteriaSet();
-    await addCriteriaSetPage.expectSuccessToast();
-    await criteriaSetsPage.expectCriteriaSetListPopulated();
-    await criteriaSetsPage.searchBySetName(uniqueName);
-    await criteriaSetsPage.expectExactRowCount(1);
-  });
+  test(
+    "TC-ECS-01 | New DreamSave criteria set can be created with 7 criteria and is listed with them",
+    { retries: 0 },
+    async ({ page }) => {
+      const set = criteriaSetData.dreamSaveSet;
+      const uniqueName = `${set.baseName}_${Date.now()}`;
+
+      await criteriaSetsPage.clickCreateCriteriaSet();
+      await addCriteriaSetPage.selectGroupType(set.groupType);
+      await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
+      await addCriteriaSetPage.fillDescription(set.description);
+      const criteriaNames = await addCriteriaSetPage.selectCriteria(
+        set.criteriaCount,
+      );
+      await addCriteriaSetPage.saveCriteriaSet();
+      await addCriteriaSetPage.expectSuccessToast();
+
+      // the new set is searchable and shows what was saved
+      await criteriaSetsPage.expectCriteriaSetListPopulated();
+      await criteriaSetsPage.searchBySetName(uniqueName);
+      await criteriaSetsPage.expectExactRowCount(1);
+      await criteriaSetsPage.expectSetRow(
+        uniqueName,
+        set.groupType,
+        criteriaNames,
+      );
+    },
+  );
 
   test("TC-ECS-02 | Criteria Sets list is populated after navigating via tab", async ({
     page,
@@ -53,19 +67,49 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
     await criteriaSetsPage.expectCriteriaSetListPopulated();
   });
 
-  test("TC-ECS-03 | Valid search returns exactly one matching criteria set", async ({
+  test("TC-ECS-03 | Searching a set name read from the list returns that set and only matching rows", async ({
     page,
   }) => {
-    const { keyword, expectedRowCount } = criteriaSetData.validSearch;
+    const keyword = await criteriaSetsPage.readFirstSetName();
     await criteriaSetsPage.searchBySetName(keyword);
-    await criteriaSetsPage.expectExactRowCount(expectedRowCount);
+    await criteriaSetsPage.expectSetListed(keyword);
+    await criteriaSetsPage.expectAllResultsContain(keyword);
   });
 
   test("TC-ECS-04 | Invalid search displays no matching criteria sets message", async ({
     page,
   }) => {
-    const { keyword } = criteriaSetData.invalidSearch;
+    const keyword = noMatchKeyword(criteriaSetData.invalidSearch.keywordPrefix);
     await criteriaSetsPage.searchBySetName(keyword);
-    await criteriaSetsPage.expectNoResults();
+    await criteriaSetsPage.expectNoResults(criteriaSetData.noResultsMessage);
   });
+
+  test(
+    "TC-ECS-05 | New Non-DreamSave criteria set can be created with 5 Non-DreamSave criteria and is listed with them",
+    { retries: 0 },
+    async ({ page }) => {
+      const set = criteriaSetData.nonDreamSaveSet;
+      const uniqueName = `${set.baseName}_${Date.now()}`;
+
+      await criteriaSetsPage.clickCreateCriteriaSet();
+      await addCriteriaSetPage.selectGroupType(set.groupType);
+      await addCriteriaSetPage.fillCriteriaSetName(uniqueName);
+      await addCriteriaSetPage.fillDescription(set.description);
+      const criteriaNames = await addCriteriaSetPage.selectCriteria(
+        set.criteriaCount,
+      );
+      await addCriteriaSetPage.saveCriteriaSet();
+      await addCriteriaSetPage.expectSuccessToast();
+
+      // the new set is searchable and shows what was saved
+      await criteriaSetsPage.expectCriteriaSetListPopulated();
+      await criteriaSetsPage.searchBySetName(uniqueName);
+      await criteriaSetsPage.expectExactRowCount(1);
+      await criteriaSetsPage.expectSetRow(
+        uniqueName,
+        set.groupType,
+        criteriaNames,
+      );
+    },
+  );
 });
