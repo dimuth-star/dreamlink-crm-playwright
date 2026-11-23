@@ -20,18 +20,47 @@ class CriteriaSearchBar {
     });
   }
 
-  async expectExactRowCount(expectedCount) {
-    const count = await this.criteriaRow.count();
-    expect(count).toBe(expectedCount);
+  criterionRow(name) {
+    return this.criteriaRow.filter({
+      has: this.page.getByRole("link", { name, exact: true }),
+    });
   }
 
-  async expectNoResults() {
+  async expectExactRowCount(expectedCount) {
+    await expect(this.criteriaRow).toHaveCount(expectedCount, {
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectCriterionListed(name) {
+    await expect(this.criterionRow(name)).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectAllResultsContain(keyword) {
+    await expect(this.criteriaRow.filter({ hasNotText: keyword })).toHaveCount(
+      0,
+      { timeout: TIMEOUTS.default },
+    );
+  }
+
+  // The row's cells, one per line: name, group type, logic, dates, status.
+  async expectCriterionRow(name, groupType, logicText) {
+    const row = this.criterionRow(name);
+    await expect(row).toBeVisible({ timeout: TIMEOUTS.default });
+    const cells = (await row.innerText())
+      .split("\n")
+      .map((cell) => cell.trim());
+    expect(cells, `group type of criterion "${name}"`).toContain(groupType);
+    expect(cells, `logic of criterion "${name}"`).toContain(logicText);
+  }
+
+  async expectNoResults(expectedMessage) {
     await expect(this.noResultsMessage).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.noResultsMessage).toHaveText(
-      "No matching eligibility criteria.",
-    );
+    await expect(this.noResultsMessage).toHaveText(expectedMessage);
   }
 }
 

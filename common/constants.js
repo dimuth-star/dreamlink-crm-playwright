@@ -66,6 +66,10 @@ const SELECTORS = {
   criterionDescriptionInput: "Description *",
   saveCriterionBtn: "Save criterion",
   criterionSuccessToast: "div.alert.desk-alert.green .alert-message",
+  // criterion logic row (accessible names); the Value control is a number box or a True/False dropdown
+  criterionAttributeSelect: "Eligibility attribute",
+  criterionConditionSelect: "Condition",
+  criterionValueControl: "Value",
 
   // Eligibility Criteria Sets
   criteriaSetRow:

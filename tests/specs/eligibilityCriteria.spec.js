@@ -13,6 +13,7 @@ const {
   AddCriterionPage,
 } = require("../../pages/eligibilityCriteria/AddCriterionPage");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const criteriaData = require("../../data/criteria.json");
 const addCriterionData = require("../../data/addCriterion.json");
 
@@ -53,36 +54,74 @@ test.describe("DreamLink CRM - Eligibility Criteria", () => {
     await criterionDetailPage.expectGroupTypeNotEmpty();
   });
 
-  test("TC-EC-03 | Valid search returns exactly one matching criterion", async ({
+  test("TC-EC-03 | Searching a criterion name read from the list returns that criterion and only matching rows", async ({
     page,
   }) => {
-    const { keyword, expectedRowCount } = criteriaData.validSearch;
+    const keyword = await eligibilityCriteriaPage.readFirstCriterionName();
     await criteriaSearchBar.searchByCriterionName(keyword);
-    await criteriaSearchBar.expectExactRowCount(expectedRowCount);
+    await criteriaSearchBar.expectCriterionListed(keyword);
+    await criteriaSearchBar.expectAllResultsContain(keyword);
   });
 
   test("TC-EC-04 | Invalid search displays no matching criteria message", async ({
     page,
   }) => {
-    const { keyword } = criteriaData.invalidSearch;
+    const keyword = noMatchKeyword(criteriaData.invalidSearch.keywordPrefix);
     await criteriaSearchBar.searchByCriterionName(keyword);
-    await criteriaSearchBar.expectNoResults();
+    await criteriaSearchBar.expectNoResults(criteriaData.noResultsMessage);
   });
 
-  test("TC-EC-05 | New criterion can be created and appears in the search results", async ({
-    page,
-  }) => {
-    const uniqueName = `${addCriterionData.newCriterion.baseName}_${Date.now()}`;
-    const { description } = addCriterionData.newCriterion;
+  test(
+    "TC-EC-05 | New DreamSave criterion can be created and is listed with its group type and logic",
+    { retries: 0 },
+    async ({ page }) => {
+      const criterion = addCriterionData.dreamSaveCriterion;
+      const uniqueName = `${criterion.baseName}_${Date.now()}`;
 
-    await addCriterionPage.clickCreateCriterion();
-    await addCriterionPage.fillCriterionName(uniqueName);
-    await addCriterionPage.fillDescription(description);
-    await addCriterionPage.saveCriterion();
-    await addCriterionPage.expectSuccessToast(uniqueName);
+      await addCriterionPage.clickCreateCriterion();
+      await addCriterionPage.fillCriterionName(uniqueName);
+      await addCriterionPage.fillDescription(criterion.description);
+      await addCriterionPage.selectGroupType(criterion.groupType);
+      await addCriterionPage.defineLogic(criterion);
+      await addCriterionPage.saveCriterion();
+      await addCriterionPage.expectSuccessToast(uniqueName);
 
-    await eligibilityCriteriaPage.expectLoaded();
-    await criteriaSearchBar.searchByCriterionName(uniqueName);
-    await criteriaSearchBar.expectExactRowCount(1);
-  });
+      // the new criterion is searchable and shows what was saved
+      await eligibilityCriteriaPage.expectLoaded();
+      await criteriaSearchBar.searchByCriterionName(uniqueName);
+      await criteriaSearchBar.expectExactRowCount(1);
+      await criteriaSearchBar.expectCriterionRow(
+        uniqueName,
+        criterion.groupType,
+        criterion.logicText,
+      );
+    },
+  );
+
+  test(
+    "TC-EC-06 | New Non-DreamSave criterion can be created and is listed with its group type and logic",
+    { retries: 0 },
+    async ({ page }) => {
+      const criterion = addCriterionData.nonDreamSaveCriterion;
+      const uniqueName = `${criterion.baseName}_${Date.now()}`;
+
+      await addCriterionPage.clickCreateCriterion();
+      await addCriterionPage.fillCriterionName(uniqueName);
+      await addCriterionPage.fillDescription(criterion.description);
+      await addCriterionPage.selectGroupType(criterion.groupType);
+      await addCriterionPage.defineLogic(criterion);
+      await addCriterionPage.saveCriterion();
+      await addCriterionPage.expectSuccessToast(uniqueName);
+
+      // the new criterion is searchable and shows what was saved
+      await eligibilityCriteriaPage.expectLoaded();
+      await criteriaSearchBar.searchByCriterionName(uniqueName);
+      await criteriaSearchBar.expectExactRowCount(1);
+      await criteriaSearchBar.expectCriterionRow(
+        uniqueName,
+        criterion.groupType,
+        criterion.logicText,
+      );
+    },
+  );
 });

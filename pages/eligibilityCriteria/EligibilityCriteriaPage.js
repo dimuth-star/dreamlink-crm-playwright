@@ -48,6 +48,18 @@ class EligibilityCriteriaPage extends BasePage {
     expect(count).toBeGreaterThan(0);
   }
 
+  // A criterion name to search for, read from the loaded list (no fixed record needed).
+  async readFirstCriterionName() {
+    const firstName = this.criteriaRow
+      .first()
+      .locator(SELECTORS.criterionNameLink);
+    await expect(
+      firstName,
+      "Eligibility Criteria list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstName.innerText()).trim();
+  }
+
   async clickFirstCriterion() {
     await this.criteriaRow
       .first()
