@@ -13,7 +13,11 @@ describe("DreamLink FO App - Task completion", () => {
   const loginScreen = new LoginScreen({ appPackage: getFoApp().appPackage });
   const taskList = new TaskListScreen();
   const taskDetail = new TaskDetailScreen({ toasts: foData.mobile.toasts });
-  const formScreen = new SurveyFormScreen({ formAnswers: foData.formAnswers, client: foData.client });
+  const formScreen = new SurveyFormScreen({
+    formAnswers: foData.formAnswers,
+    client: foData.client,
+    group: foData.upload,
+  });
 
   before(async () => {
     await loginScreen.ensureLoggedIn(getFoCredentials());
@@ -27,10 +31,10 @@ describe("DreamLink FO App - Task completion", () => {
   });
 
   // Fixture order is the execution order; "Complete Insurance Registration" is always last.
+  // Every step skips work already done, so a task completed by an earlier (interrupted) run is only
+  // opened and its Completed status checked on the detail screen.
   for (const task of foData.mobile.tasks) {
     it(`TC-FO-02 | ${task.title}: scheduled for today, started, forms completed and task completed`, async () => {
-      // Resumed after an automatic retry: already found in the Completed section by the initial scan
-      if (taskList.isKnownCompleted(task.title)) return taskList.expectKnownCompleted(task.title);
       await taskList.openTask(task.title, groupName);
       await taskDetail.scheduleToday();
       await taskDetail.markInProgress();

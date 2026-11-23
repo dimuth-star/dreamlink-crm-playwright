@@ -16,13 +16,14 @@ const ANSWER_KEYS_BY_KIND = {
 };
 
 class SurveyFormScreen extends BasePage {
-  constructor({ formAnswers, client, log = logInfo }) {
+  // group: the uploaded group's fixture block, so member count and phone always match what CRM holds
+  constructor({ formAnswers, client, group, log = logInfo }) {
     super();
     this.client = client;
     this.defaults = formAnswers.defaults;
     this.tokens = {
-      "{{members}}": client.members,
-      "{{mobileIntl}}": toZambianIntl(client.mobileLocal),
+      "{{members}}": String(group.memberCount),
+      "{{mobileIntl}}": toZambianIntl(group.phoneNumber),
       "{{idNumber}}": client.idNumber,
       "{{idType}}": client.idType,
     };
@@ -113,12 +114,18 @@ class SurveyFormScreen extends BasePage {
     throw new Error(`date did not stick on ${qid} (${title})`);
   }
 
+  // The value a dropdown currently shows ("" when empty). `timeout` waits for a value to render first.
+  async shownDropdownValue(qid, timeout = 0) {
+    if (timeout) await this.appearsWithin(MOBILE.dropdownShownValue(qid), timeout);
+    const shown = await $$(MOBILE.dropdownShownValue(qid));
+    return shown.length ? shown[0].getText() : "";
+  }
+
   async answerDropdown(qid, title, force, used) {
     const isUnique = this.unique.some((re) => re.test(title));
     used[title] = used[title] || new Set();
     if (await this.exists(MOBILE.dropdownClearBtn(qid))) {
-      const shown = await $$(MOBILE.dropdownShownValue(qid));
-      const current = shown.length ? await shown[0].getText() : "";
+      const current = await this.shownDropdownValue(qid);
       const duplicate = isUnique && current && used[title].has(current);
       if (!duplicate && !force) {
         if (current) used[title].add(current);
@@ -147,16 +154,22 @@ class SurveyFormScreen extends BasePage {
     // popup variant: Enter on the first option does not commit, so prefer the second option
     else want = popup && texts.length > 1 ? texts[1] : texts[0];
     if (popup) {
-      // popup variant: tapping an option does not commit; navigate with the keyboard, Enter, then OK
-      await this.pressKey(KEYCODES.down, Math.max(1, texts.indexOf(want)));
+      // popup variant: tapping an option does not commit; navigate with the keyboard, Enter, then OK.
+      // Focus starts on the first option and Enter there does not commit, so N presses select option N.
+      const index = texts.indexOf(want);
+      if (index < 1) throw new Error(`popup dropdown ${qid} (${title}) cannot select its first option "${want}"`);
+      await this.pressKey(KEYCODES.down, index);
       await this.pressKey(KEYCODES.enter);
       await this.tap(MOBILE.dropdownPopupOkBtn);
     } else {
       await this.tap(MOBILE.dropdownOption(qid, want));
     }
     await this.waitForGone(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.default).catch(() => {});
+    // read back what the form actually holds, so a wrong selection fails here instead of being submitted
+    const shown = await this.shownDropdownValue(qid, MOBILE_TIMEOUTS.short);
+    if (shown !== want) throw new Error(`dropdown ${qid} (${title}) shows "${shown}" after choosing "${want}"`);
     used[title].add(want);
-    this.note(qid, "dropdown", title, `${want} (options: ${texts.join(" | ")})`);
+    this.note(qid, "dropdown", title, `${want}${popup ? " (popup)" : ""} (options: ${texts.join(" | ")})`);
   }
 
   async answerInput(qid, title, force) {

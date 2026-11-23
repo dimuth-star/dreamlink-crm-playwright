@@ -46,15 +46,13 @@
     ]
   },
   "client": {
-    "mobileLocal": "0972583695",
     "idType": "NRC",
     "idNumber": "123456/12/1",
     "dobAgeYears": 18,
-    "dobExtraDays": 30,
-    "members": "10"
+    "dobExtraDays": 30
   },
   "formAnswers": {
-    "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}}, {{mobileIntl}}, {{idNumber}}, {{idType}}; dates: dob, daysAgo:N, daysAhead:N, monthsAhead:N.",
+    "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}} and {{mobileIntl}} (from upload.memberCount / upload.phoneNumber), {{idNumber}}, {{idType}}; dates: dob, daysAgo:N, daysAhead:N, monthsAhead:N.",
     "rules": [
       { "pattern": "\\btpin\\b|tax payer", "answer": { "number": "1234567890" } },
       { "pattern": "vfz group id", "answer": { "number": "12" } },

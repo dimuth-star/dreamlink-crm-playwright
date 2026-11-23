@@ -14,7 +14,8 @@ const MOBILE_TIMEOUTS = {
 
 // App UI copy the selectors and the page-source classifier match on (single source for both).
 const MOBILE_TEXT = {
-  newlyAssigned: "Newly Assigned",
+  // My Tasks section headers, in pager order (left to right)
+  taskSections: ["Newly Assigned", "To Do", "In Progress", "Completed"],
   cardSeparator: " · ",
   cardTaskType: "Client Assessment",
   getLocation: "Get Current Location",
@@ -65,7 +66,6 @@ const MOBILE = {
   filterApplyBtn: '//*[@content-desc="Apply"]',
   sectionsStrip: "//android.widget.HorizontalScrollView",
   sectionHeader: (name) => `//android.widget.TextView[@text="${name}"]`,
-  newlyAssignedHeader: `//android.widget.TextView[@text="${MOBILE_TEXT.newlyAssigned}"]`,
   taskCard: (title, group) =>
     `//*[contains(@content-desc,"${title}, ${MOBILE_TEXT.cardTaskType}${MOBILE_TEXT.cardSeparator}${group}")]`,
   groupTaskCards: (group) => `//*[starts-with(@content-desc,"TASK-") and contains(@content-desc,"· ${group}")]`,
@@ -110,7 +110,10 @@ const MOBILE = {
   dropdownList: (qid) => `//*[@resource-id="${qid}i_list"]`,
   dropdownOptions: (qid) => `//*[@resource-id="${qid}i_list"]/*[starts-with(@resource-id,"${qid}i_list")]`,
   dropdownOption: (qid, text) => `(//*[@resource-id="${qid}i_list"]//*[@text="${text}"])[1]`,
-  dropdownShownValue: (qid) => `//*[@resource-id="${qid}i"]//android.widget.TextView[@text!=""]`,
+  // the selected value: rating/popup dropdowns render it as a TextView inside `sq_Ni`; searchable list
+  // dropdowns hold it as the text of their `sq_Ni_0` input
+  dropdownShownValue: (qid) =>
+    `//*[@resource-id="${qid}i"]//android.widget.TextView[@text!=""] | //*[@resource-id="${qid}i_0"][@text!=""]`,
   dropdownPopupOkBtn: '(//android.widget.Button[@text="OK"])[last()]',
   booleanOption: (qid, text) => `(//*[@resource-id="${qid}"]//*[@text="${text}"])[last()]`,
   fileUploaded: (qid) =>
