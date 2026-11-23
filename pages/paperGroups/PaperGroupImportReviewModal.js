@@ -23,9 +23,10 @@ class PaperGroupImportReviewModal extends BasePage {
 
   // Assertions
   async expectOpen() {
-    // Processing is done once the banner offers "Review import"
+    // Processing is done once the banner offers "Review import". On a busy QA tenant the import can
+    // sit "queued — processing will start shortly" for over 30 s, so allow a background job's time.
     await expect(this.bannerReviewBtn).toBeVisible({
-      timeout: TIMEOUTS.navigation,
+      timeout: TIMEOUTS.backgroundJob,
     });
     // The summary usually opens by itself, but not always: open it from the banner if it did not
     const openedItself = await this.modal
