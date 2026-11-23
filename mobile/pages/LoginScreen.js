@@ -2,6 +2,31 @@
 const { MOBILE, MOBILE_TIMEOUTS, KEYCODES } = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 
+// Every screen the app can be found on at start, in the order they are checked (first match wins).
+const START_SCREENS = [
+  MOBILE.myTasksTitle,
+  MOBILE.loginTitle,
+  MOBILE.settingUpText,
+  MOBILE.pinTitle,
+  MOBILE.enableLocationTitle,
+  MOBILE.appTasksTab,
+  MOBILE.surveyContainer,
+  MOBILE.filterSheetTitle,
+  MOBILE.datePickerYearHeader,
+  MOBILE.confirmCompleteText,
+  MOBILE.confirmStartText,
+  MOBILE.scheduleDialogTitle,
+];
+// A dialog left open by an interrupted run (date picker, schedule / start / complete confirmation).
+const LEFTOVER_DIALOGS = [
+  MOBILE.datePickerYearHeader,
+  MOBILE.confirmCompleteText,
+  MOBILE.confirmStartText,
+  MOBILE.scheduleDialogTitle,
+];
+// Signed in but resumed on another screen (task detail, a form, an open filter sheet).
+const OTHER_SIGNED_IN_SCREENS = [MOBILE.myTasksTitle, MOBILE.appTasksTab, MOBILE.surveyContainer, MOBILE.filterSheetTitle];
+
 class LoginScreen extends BasePage {
   constructor({ appPackage }) {
     super();
@@ -50,45 +75,35 @@ class LoginScreen extends BasePage {
     if (next === MOBILE.permissionAllowWhileUsing) await this.tap(MOBILE.permissionAllowWhileUsing);
   }
 
-  async ensureLoggedIn({ username, password, pin }) {
+  // Works from whatever screen the app is on (fresh install, signed out, or left mid-task by an
+  // interrupted run) until My Tasks shows with nothing on top of it.
+  async ensureLoggedIn(credentials) {
     for (let step = 0; step < 8; step++) {
-      const screen = await this.waitForAny(
-        [
-          MOBILE.myTasksTitle,
-          MOBILE.loginTitle,
-          MOBILE.settingUpText,
-          MOBILE.pinTitle,
-          MOBILE.enableLocationTitle,
-          MOBILE.appTasksTab,
-          MOBILE.surveyContainer,
-          MOBILE.filterSheetTitle,
-          MOBILE.datePickerYearHeader,
-          MOBILE.confirmCompleteText,
-          MOBILE.confirmStartText,
-          MOBILE.scheduleDialogTitle,
-        ],
-        MOBILE_TIMEOUTS.long,
-      );
+      const screen = await this.waitForAny(START_SCREENS, MOBILE_TIMEOUTS.long);
       if (screen === MOBILE.myTasksTitle && !(await this.exists(MOBILE.filterSheetTitle))) return;
-      // A dialog left open by an interrupted run (date picker, schedule / start / complete confirmation):
-      // cancel it; the task step that opened it is idempotent and will redo it.
-      if ([MOBILE.datePickerYearHeader, MOBILE.confirmCompleteText, MOBILE.confirmStartText, MOBILE.scheduleDialogTitle].includes(screen)) {
-        await driver.back();
-        await this.waitForGone(screen).catch(() => {});
-        continue;
-      }
-      // Signed in but resumed on another screen (task detail, a form, an open filter sheet): back to the list
-      if ([MOBILE.myTasksTitle, MOBILE.appTasksTab, MOBILE.surveyContainer, MOBILE.filterSheetTitle].includes(screen)) {
-        await driver.back();
-        await this.waitForAny([MOBILE.myTasksTitle, MOBILE.appTasksTab, MOBILE.surveyContainer]).catch(() => {});
-        continue;
-      }
-      if (screen === MOBILE.loginTitle) await this.signInWithKeycloak(username, password);
-      else if (screen === MOBILE.settingUpText) await this.waitForGone(MOBILE.settingUpText, MOBILE_TIMEOUTS.long);
-      else if (screen === MOBILE.pinTitle) await this.createOfflinePin(pin);
-      else if (screen === MOBILE.enableLocationTitle) await this.enableLocation();
+      if (LEFTOVER_DIALOGS.includes(screen)) await this.cancelLeftoverDialog(screen);
+      else if (OTHER_SIGNED_IN_SCREENS.includes(screen)) await this.backTowardsTaskList();
+      else await this.completeOnboardingStep(screen, credentials);
     }
     throw new Error("Could not reach My Tasks after login/onboarding");
+  }
+
+  // The task step that opened the dialog is idempotent and will open it again.
+  async cancelLeftoverDialog(dialog) {
+    await driver.back();
+    await this.waitForGone(dialog).catch(() => {});
+  }
+
+  async backTowardsTaskList() {
+    await driver.back();
+    await this.waitForAny([MOBILE.myTasksTitle, MOBILE.appTasksTab, MOBILE.surveyContainer]).catch(() => {});
+  }
+
+  async completeOnboardingStep(screen, { username, password, pin }) {
+    if (screen === MOBILE.loginTitle) await this.signInWithKeycloak(username, password);
+    else if (screen === MOBILE.settingUpText) await this.waitForGone(MOBILE.settingUpText, MOBILE_TIMEOUTS.long);
+    else if (screen === MOBILE.pinTitle) await this.createOfflinePin(pin);
+    else if (screen === MOBILE.enableLocationTitle) await this.enableLocation();
   }
 
   // --- assertions ---

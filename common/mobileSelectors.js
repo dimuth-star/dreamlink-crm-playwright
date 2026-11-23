@@ -101,14 +101,8 @@ const MOBILE = {
   question: (qid) => `//*[@resource-id="${qid}"]`,
   questionTitle: (qid) => `//*[@resource-id="${qid}_ariaTitle"]`,
   questionInput: (qid) => `//*[@resource-id="${qid}i"]`,
-  questionSwitch: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.switch}"]`,
-  questionDatePicker: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.datePicker}"]`,
   questionEditText: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.editText}"]`,
-  questionInputOrDropdown: (qid) => `//*[@resource-id="${qid}i" or @resource-id="${qid}i_0"]`,
-  dropdownSelectBtn: (qid) => `//*[@resource-id="${qid}"]//android.widget.Button[@text="${MOBILE_TEXT.dropdownSelect}"]`,
   dropdownClearBtn: (qid) => `//*[@resource-id="${qid}"]//android.widget.Button[@text="${MOBILE_TEXT.clear}"]`,
-  questionIsContainer: (qid) =>
-    `//*[@resource-id="${qid}"]//*[starts-with(@resource-id,"sp_") or (starts-with(@resource-id,"sq_") and not(starts-with(@resource-id,"${qid}")))]`,
   dropdownList: (qid) => `//*[@resource-id="${qid}i_list"]`,
   dropdownOptions: (qid) => `//*[@resource-id="${qid}i_list"]/*[starts-with(@resource-id,"${qid}i_list")]`,
   dropdownOption: (qid, text) => `(//*[@resource-id="${qid}i_list"]//*[@text="${text}"])[1]`,
@@ -121,11 +115,8 @@ const MOBILE = {
   fileUploaded: (qid) =>
     `//*[@resource-id="${qid}"]//*[@content-desc="${MOBILE_TEXT.filePreview}" or @text="${MOBILE_TEXT.clear}"]`,
   fileSelectBtn: (qid) => `//*[@resource-id="${qid}"]//*[@text="${MOBILE_TEXT.selectFile}"]`,
-  filePreview: (qid) => `//*[@resource-id="${qid}"]//*[@content-desc="${MOBILE_TEXT.filePreview}"]`,
-  fileNoFileChosen: (qid) => `//*[@resource-id="${qid}i"][@text="${MOBILE_TEXT.noFileChosen}"]`,
   locationBtn: (qid) =>
     `//*[@resource-id="${qid}"]//android.widget.Button[contains(@text,"${MOBILE_TEXT.getLocation}")]`,
-  locationInline: (qid) => `//*[@resource-id="${qid}"][contains(@text,"${MOBILE_TEXT.getLocation}")]`,
   locationEmpty: (qid) => `//*[@resource-id="${qid}"]//*[@text="No location selected"]`,
   signaturePads: '//android.widget.EditText[starts-with(@text,"Signature")]',
   // the same signature-pad test, run on a page-source XML string already in hand (no extra device call)

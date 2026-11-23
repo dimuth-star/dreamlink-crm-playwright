@@ -8,6 +8,18 @@ const COMFORT_BAND = { top: 0.08, bottom: 0.8, maxShare: 0.3 };
 // Smallest pad-free band (share of the scroll view's height) a swipe can run in without touching a pad.
 const MIN_SWIPE_BAND = 0.07;
 
+// The tallest stretch of [top, bottom] that no `blocked` [start, end] range covers, or null.
+function widestFreeBand(top, bottom, blocked) {
+  const bands = [];
+  let cursor = top;
+  for (const [start, end] of [...blocked].sort((a, b) => a[0] - b[0])) {
+    if (start > cursor) bands.push([cursor, start]);
+    cursor = Math.max(cursor, end);
+  }
+  if (cursor < bottom) bands.push([cursor, bottom]);
+  return bands.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0] || null;
+}
+
 class BasePage {
   // Existence by match count: WebdriverIO's `$` is strict and throws when a selector matches twice.
   async exists(selector) {
@@ -141,21 +153,18 @@ class BasePage {
       await driver.execute("mobile: scrollGesture", { elementId: sc.elementId, direction, percent });
       return (await driver.getPageSource()) !== before;
     }
+    return this.swipeClearOfPads(sc, pads, direction, percent);
+  }
+
+  // A signature pad is on screen: swipe inside the tallest band of the scroll view that no pad covers.
+  async swipeClearOfPads(sc, pads, direction, percent) {
     const r = await driver.getElementRect(sc.elementId);
     const blocked = [];
     for (const p of pads) {
       const pr = await driver.getElementRect(p.elementId);
       blocked.push([Math.max(pr.y, r.y), Math.min(pr.y + pr.height, r.y + r.height)]);
     }
-    blocked.sort((a, b) => a[0] - b[0]);
-    const bands = [];
-    let cursor = r.y;
-    for (const [s, e] of blocked) {
-      if (s > cursor) bands.push([cursor, s]);
-      cursor = Math.max(cursor, e);
-    }
-    if (cursor < r.y + r.height) bands.push([cursor, r.y + r.height]);
-    const best = bands.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
+    const best = widestFreeBand(r.y, r.y + r.height, blocked);
     if (!best || best[1] - best[0] < r.height * MIN_SWIPE_BAND) return false;
     // intentional stabilization: a signature pad is on screen, so swipe inside the pad-free band.
     // Points are derived at runtime from the scroll container's and pads' own rects (no fixed coordinates).
@@ -207,4 +216,4 @@ class BasePage {
   }
 }
 
-module.exports = { BasePage };
+module.exports = { BasePage, widestFreeBand };
