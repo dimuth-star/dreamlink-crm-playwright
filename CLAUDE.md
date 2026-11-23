@@ -51,9 +51,18 @@ pages/BasePage.js          Shared base class: goto, waits, popup dismissal, auto
 pages/<domain>/*.js        Page objects, grouped by domain folder.
 tests/specs/*.spec.js      The actual specs — one file per domain.
 data/uploads/*.xlsx        Static upload fixtures (invalid-file cases only; valid files are generated at runtime).
-util/helpers.js            loadEnvFile(), getCredentials().
+util/helpers.js            loadEnvFile(), getCredentials(); FO app: getFoApp(), getFoCredentials(), missingFoEnv().
 util/paperGroupFile.js     exceljs helpers: build/write/read Paper Groups .xlsx files (exceljs is a devDependency).
 util/loggers.js            logStep / logInfo / logError console wrappers.
+util/runState.js           Hand-off file between the three TC-FO steps (e2e-run/runState.json, git-ignored).
+util/clientDataGenerator.js  Run-date-relative dates and +260 phone formatting for the FO forms.
+util/formAnswerRules.js    Pure: which answer each FO form question gets (fixture rules). `npm run test:form-rules`.
+util/surveyQuestions.js    Pure: classifies the FO app's SurveyJS questions from one page-source snapshot.
+util/uiTree.js             Minimal parser for the UiAutomator2 page-source XML.
+common/mobileSelectors.js  FO app selectors (MOBILE), UI copy they match on (MOBILE_TEXT), MOBILE_TIMEOUTS, KEYCODES.
+mobile/                    WebdriverIO + Appium side of TC-FO: wdio.conf.js, pages/*Screen.js, pages/components/, specs/.
+tests/e2e/*.e2e.js         CRM side of TC-FO (run by playwright.e2e.config.js only).
+tests/unit/*.check.js      Plain-Node checks of pure util modules (no browser, no device).
 playwright.config.js       Single Chromium project, Allure + list reporters.
 allure-results/            Raw Allure output (git-ignored).
 allure-report/             Generated Allure HTML (git-ignored).
@@ -86,7 +95,7 @@ numbering from the highest existing ID:
 | `tasks.spec.js` | `TC-TK` | 01–03 |
 | `forms.spec.js` | `TC-FM` | 01–05 |
 | `paperGroups.spec.js` | `TC-PG` | 01–08 |
-| `tests/e2e/foEndToEnd.e2e.js` + `mobile/specs/foTaskCompletion.e2e.js` | `TC-FO` | 01–03 (see §4a) |
+| `tests/e2e/foEndToEnd.e2e.js` + `mobile/specs/foTaskCompletion.e2e.js` | `TC-FO` | 01, 02.1–02.6 (one per task), 03 (see §4a) |
 
 Known app routes (used by `open()` methods): `/`, `/desk/dl-dreamsave-group`, `/desk/dl-user`,
 `/desk/dl-product`, `/desk/dl-lead`, `/desk/dl-pre-lead`, `/desk/dl-task`,
@@ -236,6 +245,25 @@ test.describe("DreamLink CRM - Tasks", () => {
 - Manual pre-conditions are documented as a `// PRE-CONDITION: ...` comment immediately above
   the test (e.g. a group that must be reset to *Not Classified* before `TC-CL-02` can pass).
 
+### Mobile (Field Officer app) conventions
+
+The same rules apply to `mobile/`, translated to WebdriverIO:
+
+- Screen objects are `mobile/pages/<Name>Screen.js` (`...Screen`, not `...Page`); reusable widgets
+  (`NativeDatePicker`, `GalleryPicker`) live in `mobile/pages/components/`. All extend the mobile
+  `BasePage` (`mobile/pages/BasePage.js`, unrelated to the web one) and use the `driver` / `$$`
+  globals; constructors take an options object, not a `page`.
+- Selectors live only in `common/mobileSelectors.js` (`MOBILE`); parameterised selectors are small
+  functions (`MOBILE.taskCard(title, group)`). App UI text that selectors or the snapshot classifier
+  match on goes in `MOBILE_TEXT`; expected messages (toasts) stay in `data/foEndToEnd.json`.
+- Timeouts and poll intervals come from `MOBILE_TIMEOUTS`, key codes from `KEYCODES`. No
+  `browser.pause()` / sleeps; the only pointer-coordinate actions are the two marked
+  `// intentional stabilization:` (signature stroke, pad-free swipe), both derived from element rects.
+- Assertions are `expect*` methods on the screen objects (WebdriverIO's global `expect`); the spec
+  has no `$`, `driver` or selector calls. Env access goes through `util/helpers.js`.
+- Decision logic that needs no device (answer rules, question classification) belongs in a pure
+  `util/` module with a `tests/unit/*.check.js`, not in a screen object.
+
 ## 4. Test Data & Constants Conventions
 
 ### `common/constants.js`
@@ -244,8 +272,10 @@ Exports three objects:
 
 - `SELECTORS` — flat map of `camelCase` key → selector string, grouped by `//` screen comments.
   Append new entries to the matching group, or add a new group at the end.
-- `TIMEOUTS` — `{ default: 20000, navigation: 30000 }`. Use these; do not invent new numeric
-  literals.
+- `TIMEOUTS` — `default` 20 s (elements), `navigation` 30 s (URLs), `shortWait` 5 s (bounded
+  probes / poll interval), `backgroundJob` 120 s (server jobs that finish after the UI confirms:
+  DreamLink number, draft flag, queued imports), `sync` 600 s (mobile ↔ CRM). Use these; do not
+  invent new numeric literals.
 - `DEFAULTS` — `{ pageSize: 20 }`.
 
 ### `data/*.json`
@@ -307,10 +337,18 @@ Sidebar label "Paper Groups" is the `DL Non DreamSave Group` doctype at `/desk/d
 - **Review import dialog does not always open by itself.** Wait for the banner's "Review import" button
   (processing done), give the dialog a short bounded window, then click the button if it did not appear
   (`PaperGroupImportReviewModal.expectOpen`). Otherwise the import is left pending and blocks later uploads.
+  On a busy tenant the import can sit "queued — processing will start shortly" for over 30 s, so that wait
+  uses `TIMEOUTS.backgroundJob`. If a run dies there, the import is left pending: open Paper Groups, click
+  *Review import*, check the summary and *Proceed* (or *Cancel Import*) before the next run.
 - **Assessment flow (`TC-PG-06..08`):** a group is "Verification Ready" when its cycle number is 3 (cycle 1 =
   "Future Ready"). Select the row → Actions → Start Assessment → choose a Product → Confirm. The result is a
-  **dialog** ("Start Assessment Initiated"), not a toast. The DreamLink number (`DLK-ZM-n-n`) appears at once, a
-  Lead is created for the group with **6 tasks** (all Unassigned), and the group is locked.
+  **dialog** ("Start Assessment Initiated"), not a toast. A Lead is created for the group with **6 tasks** (all
+  Unassigned) and the group is locked.
+- **QA backend lag around assessment:** for a few seconds after an import the new group is still flagged as a
+  draft, and Start Assessment answers "Invalid Selection — Draft groups cannot be selected"
+  (`PaperGroupsPage.startAssessmentWhenReady` reloads and retries; used by TC-FO-01, TC-PG-06 still calls
+  `selectFirstGroup` + `startAssessment`). The DreamLink number (`DLK-ZM-n-n`) is written by a background job
+  and can take longer than 20 s; `PaperGroupDetailPage.expectDreamLinkNumber` reloads and polls for it.
 - **Assessed groups cannot be deleted or edited**, nor can their lead or tasks (no Delete button anywhere; the Lead
   only offers "Reject Workflow"). `TC-PG-06..08` therefore use their **own** `QA ASM <timestamp>-1` group, never the
   `TC-PG-03..05` ones, and leave it on QA by design. Do not run Reject Workflow without being asked.
@@ -330,19 +368,29 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
 
 1. **TC-FO-01** (`@fo-setup`, Playwright, `playwright.e2e.config.js`): uploads `E2E FO <ts>-1` (10 members, cycle 3),
    assesses it, checks DreamLink number + lead + 6 tasks, assigns them to fo.zambia, writes `e2e-run/runState.json`.
-2. **TC-FO-02** (WebdriverIO + Appium, `mobile/wdio.conf.js`): on the device, waits for the 6 tasks to sync, then per
-   task (fixture order, **Complete Insurance Registration always last**): schedule today → in progress → forms → complete.
+2. **TC-FO-02.1–02.6** (WebdriverIO + Appium, `mobile/wdio.conf.js`), one test per task: on the device, waits for the 6
+   tasks to sync, then per task (fixture order, **Complete Insurance Registration always last**): schedule today → in
+   progress → forms → complete → Completed status checked on the detail screen.
 3. **TC-FO-03** (`@fo-verify`): polls the lead until the 6 task titles show Completed for FO Zambia.
 
 - E2E files are named `*.e2e.js` so the main config (`*.spec.js`) never runs them; `playwright.config.js` is untouched.
-- Each run leaves one locked group + lead + tasks on QA (assessed groups cannot be deleted).
+- Each run leaves one locked group + lead + tasks on QA (assessed groups cannot be deleted). A run that dies before
+  the assessment leaves an unlocked, deletable group instead.
 - **Prerequisites:** Android device connected, QA app `com.dreamlink.agent.qa` installed and already onboarded (PIN set),
-  Appium 3 with UiAutomator2. `env/qa.env` needs `ANDROID_UDID`, `FO_APP_PATH/PACKAGE/ACTIVITY`, `FO_USERNAME`,
-  `FO_PASSWORD`, `FO_PIN`. An Appium server already on port 4723 is reused; otherwise the wdio appium service starts one.
-- Mobile code: `mobile/pages/*` (extend the mobile `BasePage`, use WebdriverIO globals), selectors in
-  `common/mobileSelectors.js`, data + form answer rules in `data/foEndToEnd.json`, dates/phones from
-  `util/clientDataGenerator.js`. Form answers are rules matched on the question title **and** type; a rule overrides a
-  prefilled value, prefilled values are kept only when no rule covers them.
+  Appium 3 with UiAutomator2. `env/qa.env` needs `ANDROID_UDID`, `FO_APP_PACKAGE`, `FO_APP_ACTIVITY`, `FO_USERNAME`,
+  `FO_PASSWORD`, `FO_PIN` (`onPrepare` fails fast listing any that are missing). `FO_APP_PATH` is in the env file but
+  nothing reads it: the app is not installed by the run. An Appium server already on port 4723 is reused; otherwise
+  the wdio appium service starts one.
+- Mobile code: `mobile/pages/*Screen.js` (see §3 *Mobile conventions*), selectors in `common/mobileSelectors.js`,
+  data + form answer rules in `data/foEndToEnd.json`. Which answer a question gets is decided by the pure
+  `util/formAnswerRules.js` (check: `npm run test:form-rules`); which kind of question it is, by
+  `util/surveyQuestions.js` (one classifier, one page-source read per screen). Form answers are rules matched on the
+  question title **and** type; a rule overrides a prefilled value, prefilled values are kept only when no rule covers
+  them. `{{members}}` / `{{mobileIntl}}` come from the `upload` block, so they always match the uploaded group.
+- **Form checks:** every dropdown choice is read back and a mismatch fails the task (list dropdowns hold the value on
+  their `sq_Ni_0` input, rating/popup ones in a TextView). Popup dropdowns cannot select their first option by keyboard;
+  a rule asking for it fails clearly. The loan-term number (`sq_68`) needs the validation fix pass in every run; that is
+  expected. An unrecognised question type is logged at `[ERROR]` level and left to the form's own validation.
 - **App/automation gotchas:** WebdriverIO `$` is strict (two matches throw) — use `BasePage.exists()` (match count).
   The scroll gesture reports "moved" even at the end of a WebView page — detect the end by "screen unchanged". Elements
   scrolled to the bottom edge sit under the bottom tab bar (`settleIntoView` nudges them up). Bottom-tab labels start with
@@ -351,12 +399,17 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
   pointer-coordinate actions are marked `// intentional stabilization:`). Keycloak login runs in a browser custom tab
   whose fields are not in the accessibility tree (Tab / type / Enter). Mobile forms require phones as `+260…`.
 - Completing tasks makes CRM add follow-up tasks (e.g. "Review Loan Documents"); assert the 6 FO tasks by title only.
-- **Expected duration:** about 14 minutes end to end (setup ~30s, mobile ~12½ min, verify ~15s). Stability was confirmed
-  with 3 consecutive clean runs (no retries) on the Samsung SM-A235M.
-- **Recovery:** `specFileRetries: 2` in `wdio.conf.js`. The UiAutomator2 automation service on the device occasionally drops
-  ("instrumentation process is not running") with no app error; a retry starts a fresh session and resumes, because every
-  step is idempotent (scheduled/started/completed steps and answered fields are skipped; a completed task found by the
-  initial section scan is not reopened). A run that needed a retry still passes but is slower; check the log for `RETRYING`.
+- **Expected duration:** about 14–15 minutes end to end (setup 30–40 s, mobile 12½–14½ min, verify 10–20 s). The
+  longest task, Complete Group Loan Application (3-leader KYC), takes 5–10 min. Stability was confirmed with 3
+  consecutive clean runs (no retries) on the Samsung SM-A235M, and again in strict mode after the mobile refactor.
+- **Retries and the summary line:** `specFileRetries: 2` by default. The UiAutomator2 automation service on the device
+  occasionally drops ("instrumentation process is not running") with no app error; a retry starts a fresh session and
+  resumes. Every run ends with `=== FO mobile summary: PASSED cleanly, no retries` / `PASSED AFTER n RETRIES - not a
+  clean run` / `FAILED after n attempt(s)`; only the first counts as a clean pass. `FO_STRICT=1` turns retries off — use
+  it for stability runs. Each task has a 15-min mocha limit (`MOBILE_TIMEOUTS.task`).
+- **Resuming:** every step is idempotent (scheduled/started steps and answered fields are skipped). The task list reads
+  the section on screen from its header (only the visible pager page is in the tree; the page after Completed has no
+  header), and a task completed by an interrupted run is opened and its Completed status checked, never assumed.
 - **Device prep for clean runs:** keep the phone charging and awake, close floating overlays (screen recorders,
   mirroring), postpone system software updates (an update prompt covers the app and causes a retry), don't use the phone
   during a run. `waitForIdleTimeout: 0` is set deliberately: all waits are explicit, and dialog buttons use
@@ -418,6 +471,12 @@ npx playwright test tests/specs/tasks.spec.js --headed --workers=1
 
 # A single test case by ID
 npx playwright test --grep "TC-LD-03" --workers=1
+
+# Field Officer web -> Android -> web flow (device + Appium required, see §4a)
+npm run test:e2e:fo
+FO_STRICT=1 npm run test:e2e:fo                      # bash: no mobile retries (stability runs)
+$env:FO_STRICT="1"; npm run test:e2e:fo              # PowerShell
+npm run test:form-rules                              # pure FO answer-rule check, no device
 
 # Switch environment (default is qa)
 TEST_ENV=qa npx playwright test --workers=1          # bash

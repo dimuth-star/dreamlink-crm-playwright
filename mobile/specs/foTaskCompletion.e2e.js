@@ -30,11 +30,11 @@ describe("DreamLink FO App - Task completion", () => {
     await taskList.expectGroupTaskCount(groupName, foData.assessment.taskCount);
   });
 
-  // Fixture order is the execution order; "Complete Insurance Registration" is always last.
-  // Every step skips work already done, so a task completed by an earlier (interrupted) run is only
-  // opened and its Completed status checked on the detail screen.
-  for (const task of foData.mobile.tasks) {
-    it(`TC-FO-02 | ${task.title}: scheduled for today, started, forms completed and task completed`, async () => {
+  // Fixture order is the execution order (and gives the IDs TC-FO-02.1..02.6); "Complete Insurance
+  // Registration" is always last. Every step skips work already done, so a task completed by an earlier
+  // (interrupted) run is only opened and its Completed status checked on the detail screen.
+  foData.mobile.tasks.forEach((task, index) => {
+    it(`TC-FO-02.${index + 1} | ${task.title}: scheduled for today, started, forms completed and task completed`, async () => {
       await taskList.openTask(task.title, groupName);
       await taskDetail.scheduleToday();
       await taskDetail.markInProgress();
@@ -42,5 +42,5 @@ describe("DreamLink FO App - Task completion", () => {
       await taskDetail.markCompleted();
       await taskDetail.expectStatus(foData.assessment.completedStatus);
     });
-  }
+  });
 });
