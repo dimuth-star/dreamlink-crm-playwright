@@ -42,11 +42,11 @@ class TaskDetailScreen extends BasePage {
 
   async openForm(row) {
     await (await row.$(MOBILE.formRowViewBtn)).click();
-    const opened = await this.first(MOBILE.surveyContainer, 8000).then(() => true).catch(() => false);
-    if (opened) return;
+    if (await this.appearsWithin(MOBILE.surveyContainer, MOBILE_TIMEOUTS.formOpen)) return;
     // the row sat behind the action bar: scroll it clear and tap View again
     await this.scrollPage("down", 0.5);
     const again = await this.nextPendingForm();
+    if (!again) throw new Error("pending form row disappeared before it could be opened");
     await (await again.row.$(MOBILE.formRowViewBtn)).click();
     await this.first(MOBILE.surveyContainer, MOBILE_TIMEOUTS.form);
   }

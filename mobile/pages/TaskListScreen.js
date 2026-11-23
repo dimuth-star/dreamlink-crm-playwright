@@ -1,6 +1,6 @@
 // "My Tasks": group filter, horizontal status sections (Newly Assigned / To Do / In Progress / Completed),
 // and task cards labelled "TASK-n · <title>, Client Assessment · <group>".
-const { MOBILE, MOBILE_TIMEOUTS } = require("../../common/mobileSelectors");
+const { MOBILE, MOBILE_TIMEOUTS, MOBILE_TEXT } = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 
 // Status sections are horizontal pages in lifecycle order. A task moves right as it progresses:
@@ -24,7 +24,7 @@ class TaskListScreen extends BasePage {
         .catch(() => {});
     }
     await this.first(MOBILE.myTasksTitle);
-    this.section = (await this.exists(MOBILE.sectionHeader("Newly Assigned"))) ? SECTION.newlyAssigned : null;
+    this.section = (await this.exists(MOBILE.newlyAssignedHeader)) ? SECTION.newlyAssigned : null;
   }
 
   async sectionsStrip() {
@@ -43,7 +43,7 @@ class TaskListScreen extends BasePage {
   }
 
   async goToFirstSection() {
-    if (await this.exists(MOBILE.sectionHeader("Newly Assigned"))) {
+    if (await this.exists(MOBILE.newlyAssignedHeader)) {
       this.section = SECTION.newlyAssigned;
       return;
     }
@@ -80,8 +80,10 @@ class TaskListScreen extends BasePage {
   async recordCardsOnScreen(group, found) {
     for (const c of await $$(MOBILE.groupTaskCards(group))) {
       const desc = await c.getAttribute("content-desc"); // "TASK-n · <title>, Client Assessment · <group>..."
-      const number = desc.split(" · ")[0];
-      const title = desc.slice(number.length + 3).split(", Client Assessment")[0];
+      const number = desc.split(MOBILE_TEXT.cardSeparator)[0];
+      const title = desc
+        .slice(number.length + MOBILE_TEXT.cardSeparator.length)
+        .split(`, ${MOBILE_TEXT.cardTaskType}`)[0];
       found.add(number);
       this.taskSections.set(title, this.section);
     }
@@ -138,7 +140,11 @@ class TaskListScreen extends BasePage {
     await this.tap(cardSel);
     await driver.waitUntil(
       async () => !(await this.exists(MOBILE.myTasksTitle)) && (await this.exists(MOBILE.taskTitleText(title))),
-      { timeout: MOBILE_TIMEOUTS.default, interval: 700, timeoutMsg: `task detail for "${title}" did not open` },
+      {
+        timeout: MOBILE_TIMEOUTS.default,
+        interval: MOBILE_TIMEOUTS.poll,
+        timeoutMsg: `task detail for "${title}" did not open`,
+      },
     );
   }
 

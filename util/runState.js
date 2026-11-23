@@ -23,4 +23,4 @@ function clearRunState() {
   if (fs.existsSync(STATE_FILE)) fs.unlinkSync(STATE_FILE);
 }
 
-module.exports = { writeRunState, readRunState, clearRunState, STATE_FILE };
+module.exports = { writeRunState, readRunState, clearRunState };

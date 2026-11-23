@@ -15,7 +15,7 @@ class LoginScreen extends BasePage {
     await this.tap(MOBILE.loginContinueBtn);
     await driver.waitUntil(async () => (await this.currentPackage()) !== this.appPackage, {
       timeout: MOBILE_TIMEOUTS.long,
-      interval: 1000,
+      interval: MOBILE_TIMEOUTS.pollSlow,
       timeoutMsg: "Keycloak custom tab did not open",
     });
     // page fully loaded once the custom tab's progress bar is gone
@@ -25,7 +25,7 @@ class LoginScreen extends BasePage {
     await this.pressKey(KEYCODES.enter);
     await driver.waitUntil(async () => (await this.currentPackage()) === this.appPackage, {
       timeout: MOBILE_TIMEOUTS.long,
-      interval: 1000,
+      interval: MOBILE_TIMEOUTS.pollSlow,
       timeoutMsg: "app did not return after Keycloak sign-in",
     });
   }
@@ -34,7 +34,7 @@ class LoginScreen extends BasePage {
     const el = await this.first(box);
     await el.click();
     await this.pressKey(KEYCODES.del, 8);
-    for (const ch of String(pin)) await this.pressKey(KEYCODES.digit0 + Number(ch));
+    await this.pressDigits(pin);
   }
 
   async createOfflinePin(pin) {

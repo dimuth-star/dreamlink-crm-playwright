@@ -43,11 +43,4 @@ function resolveDateToken(token, client) {
   throw new Error(`Unknown date token "${token}"`);
 }
 
-module.exports = {
-  dobForAge,
-  daysAgo,
-  daysAhead,
-  monthsAhead,
-  toZambianIntl,
-  resolveDateToken,
-};
+module.exports = { toZambianIntl, resolveDateToken };

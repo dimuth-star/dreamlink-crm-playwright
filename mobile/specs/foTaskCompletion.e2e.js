@@ -5,21 +5,18 @@ const { TaskListScreen } = require("../pages/TaskListScreen");
 const { TaskDetailScreen } = require("../pages/TaskDetailScreen");
 const { SurveyFormScreen } = require("../pages/SurveyFormScreen");
 const { readRunState } = require("../../util/runState");
+const { getFoApp, getFoCredentials } = require("../../util/helpers");
 const foData = require("../../data/foEndToEnd.json");
 
 describe("DreamLink FO App - Task completion", () => {
   const { groupName } = readRunState();
-  const loginScreen = new LoginScreen({ appPackage: process.env.FO_APP_PACKAGE });
+  const loginScreen = new LoginScreen({ appPackage: getFoApp().appPackage });
   const taskList = new TaskListScreen();
   const taskDetail = new TaskDetailScreen({ toasts: foData.mobile.toasts });
   const formScreen = new SurveyFormScreen({ formAnswers: foData.formAnswers, client: foData.client });
 
   before(async () => {
-    await loginScreen.ensureLoggedIn({
-      username: process.env.FO_USERNAME,
-      password: process.env.FO_PASSWORD,
-      pin: process.env.FO_PIN,
-    });
+    await loginScreen.ensureLoggedIn(getFoCredentials());
     await loginScreen.expectOnTaskList();
     // Wait for background sync to deliver this run's tasks (no refresh taps)
     await taskList.waitForGroupTasks(groupName, foData.assessment.taskCount, {

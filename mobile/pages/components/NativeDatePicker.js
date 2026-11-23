@@ -14,10 +14,6 @@ class NativeDatePicker extends BasePage {
     await this.first(MOBILE.datePickerYearHeader, timeout);
   }
 
-  async isOpen() {
-    return this.exists(MOBILE.datePickerYearHeader);
-  }
-
   async selectYear(year) {
     const header = await this.first(MOBILE.datePickerYearHeader);
     if ((await header.getText()) === String(year)) return;

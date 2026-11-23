@@ -1,7 +1,8 @@
 // Generic filler for the app's SurveyJS forms (rendered in a WebView; questions are exposed as
 // sq_N / sq_N_ariaTitle / sq_Ni nodes). Answers come from fixture rules matched on the question title.
-const { MOBILE, MOBILE_TIMEOUTS } = require("../../common/mobileSelectors");
+const { MOBILE, MOBILE_TIMEOUTS, MOBILE_TEXT, ANDROID_CLASS, KEYCODES } = require("../../common/mobileSelectors");
 const { resolveDateToken, toZambianIntl } = require("../../util/clientDataGenerator");
+const { logInfo } = require("../../util/loggers");
 const { BasePage } = require("./BasePage");
 const { NativeDatePicker } = require("./components/NativeDatePicker");
 const { GalleryPicker } = require("./components/GalleryPicker");
@@ -15,7 +16,7 @@ const ANSWER_KEYS_BY_KIND = {
 };
 
 class SurveyFormScreen extends BasePage {
-  constructor({ formAnswers, client, log = (line) => console.log(line) }) {
+  constructor({ formAnswers, client, log = logInfo }) {
     super();
     this.client = client;
     this.defaults = formAnswers.defaults;
@@ -75,7 +76,7 @@ class SurveyFormScreen extends BasePage {
     await this.gallery.pickFirstImage();
     await driver.waitUntil(
       async () => (await this.exists(MOBILE.surveyContainer)) && (await this.exists(MOBILE.fileUploaded(qid))),
-      { timeout: MOBILE_TIMEOUTS.form, interval: 1000, timeoutMsg: `image not attached to ${qid}` },
+      { timeout: MOBILE_TIMEOUTS.form, interval: MOBILE_TIMEOUTS.pollSlow, timeoutMsg: `image not attached to ${qid}` },
     );
     this.note(qid, "file", title, "gallery image attached");
   }
@@ -101,7 +102,7 @@ class SurveyFormScreen extends BasePage {
       await this.hideKeyboard();
       await input.click();
       // the first tap can be swallowed (it only moves focus off another field)
-      if (!(await this.first(MOBILE.datePickerYearHeader, 5000).then(() => true).catch(() => false))) await input.click();
+      if (!(await this.appearsWithin(MOBILE.datePickerYearHeader, MOBILE_TIMEOUTS.short))) await input.click();
       await this.datePicker.pick(date);
       // commit: move focus off the date input (its own title), then read the value back
       const t = await $$(MOBILE.questionTitle(qid));
@@ -115,7 +116,7 @@ class SurveyFormScreen extends BasePage {
   async answerDropdown(qid, title, force, used) {
     const isUnique = this.unique.some((re) => re.test(title));
     used[title] = used[title] || new Set();
-    if (await this.exists(MOBILE.questionChild(qid, '//android.widget.Button[@text="Clear"]'))) {
+    if (await this.exists(MOBILE.dropdownClearBtn(qid))) {
       const shown = await $$(MOBILE.dropdownShownValue(qid));
       const current = shown.length ? await shown[0].getText() : "";
       const duplicate = isUnique && current && used[title].has(current);
@@ -123,15 +124,15 @@ class SurveyFormScreen extends BasePage {
         if (current) used[title].add(current);
         return this.note(qid, "dropdown", title, `kept "${current}"`);
       }
-      await this.tap(MOBILE.questionChild(qid, '//android.widget.Button[@text="Clear"]'));
+      await this.tap(MOBILE.dropdownClearBtn(qid));
     }
     const input = await this.scrollToResourceIdMatching(`^${qid}i_(0|undefined)$`);
     await this.hideKeyboard();
     // open the list (focus + Arrow Down); the first tap can be swallowed while focus leaves the previous field
     for (let attempt = 1; attempt <= 3; attempt++) {
       await input.click();
-      await this.pressKey(20);
-      if (await this.first(MOBILE.dropdownList(qid), 4000).then(() => true).catch(() => false)) break;
+      await this.pressKey(KEYCODES.down);
+      if (await this.appearsWithin(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.short)) break;
       if (attempt === 3) throw new Error(`dropdown list for ${qid} (${title}) did not open`);
     }
     const texts = [];
@@ -147,8 +148,8 @@ class SurveyFormScreen extends BasePage {
     else want = popup && texts.length > 1 ? texts[1] : texts[0];
     if (popup) {
       // popup variant: tapping an option does not commit; navigate with the keyboard, Enter, then OK
-      await this.pressKey(20, Math.max(1, texts.indexOf(want)));
-      await this.pressKey(66);
+      await this.pressKey(KEYCODES.down, Math.max(1, texts.indexOf(want)));
+      await this.pressKey(KEYCODES.enter);
       await this.tap(MOBILE.dropdownPopupOkBtn);
     } else {
       await this.tap(MOBILE.dropdownOption(qid, want));
@@ -159,7 +160,7 @@ class SurveyFormScreen extends BasePage {
   }
 
   async answerInput(qid, title, force) {
-    const input = (await $$(MOBILE.questionInputOfClass(qid, "android.widget.EditText")))[0];
+    const input = (await $$(MOBILE.questionEditText(qid)))[0];
     const current = (await input.getText()) || "";
     const rule = this.ruleFor(title, "input");
     if (current.trim() && !rule && !force) return this.note(qid, "text", title, `kept "${current}"`);
@@ -209,18 +210,21 @@ class SurveyFormScreen extends BasePage {
     if (await this.exists(MOBILE.questionIsContainer(qid))) return; // dynamic panel: children answered individually
     if (!(await this.exists(MOBILE.questionInputOrDropdown(qid)))) await this.scrollPage("down", 0.25);
     const title = await this.titleOf(qid);
-    const child = (xp) => this.exists(MOBILE.questionChild(qid, xp));
 
     if ((await this.exists(MOBILE.locationBtn(qid))) || (await this.exists(MOBILE.locationInline(qid)))) {
       return this.answerLocation(qid, title);
     }
-    if ((await child('//*[@text="Select File"]')) || (await child('//*[@content-desc="File preview"]')) || (await this.exists(MOBILE.fileNoFileChosen(qid)))) {
+    if (
+      (await this.exists(MOBILE.fileSelectBtn(qid))) ||
+      (await this.exists(MOBILE.filePreview(qid))) ||
+      (await this.exists(MOBILE.fileNoFileChosen(qid)))
+    ) {
       return this.answerFile(qid, title);
     }
-    if (await this.exists(MOBILE.questionInputOfClass(qid, "android.widget.Switch"))) return this.answerBoolean(qid, title, force);
-    if (await this.exists(MOBILE.questionInputOfClass(qid, "android.widget.DatePicker"))) return this.answerDate(qid, title, force);
-    if (await child('//android.widget.Button[@text="Select"]')) return this.answerDropdown(qid, title, force, used);
-    if (await this.exists(MOBILE.questionInputOfClass(qid, "android.widget.EditText"))) return this.answerInput(qid, title, force);
+    if (await this.exists(MOBILE.questionSwitch(qid))) return this.answerBoolean(qid, title, force);
+    if (await this.exists(MOBILE.questionDatePicker(qid))) return this.answerDate(qid, title, force);
+    if (await this.exists(MOBILE.dropdownSelectBtn(qid))) return this.answerDropdown(qid, title, force, used);
+    if (await this.exists(MOBILE.questionEditText(qid))) return this.answerInput(qid, title, force);
     if (/signature/i.test(title)) return this.answerSignature(qid, title);
     if (!retried) {
       await this.scrollPage("down", 0.3);
@@ -254,16 +258,21 @@ class SurveyFormScreen extends BasePage {
       const titleNode = byId.get(`${qid}_ariaTitle`);
       const title = titleNode ? (titleNode.a.text || "").trim() : `(untitled ${qid})`;
       const input = byId.get(`${qid}i`);
-      const cls = input ? input.cls.split(".").pop() : "";
+      const cls = input ? input.cls : "";
       const has = (pred) => inner.some(pred);
+      const hasLocation = (n) => (n.a.text || "").includes(MOBILE_TEXT.getLocation);
       let kind = "unknown";
       if (has((n) => /^sp_/.test(idOf(n)) || (/^sq_\d+$/.test(idOf(n)) && idOf(n) !== qid))) kind = "container";
-      else if ((node.a.text || "").includes("Get Current Location") || has((n) => (n.a.text || "").includes("Get Current Location"))) kind = "location";
-      else if (has((n) => n.a.text === "Select File" || n.a["content-desc"] === "File preview") || (input && input.a.text === "No file chosen")) kind = "file";
-      else if (cls === "Switch") kind = "boolean";
-      else if (cls === "DatePicker") kind = "date";
-      else if (has((n) => n.cls.endsWith("Button") && n.a.text === "Select")) kind = "dropdown";
-      else if (cls === "EditText") kind = "input";
+      else if (hasLocation(node) || has(hasLocation)) kind = "location";
+      else if (
+        has((n) => n.a.text === MOBILE_TEXT.selectFile || n.a["content-desc"] === MOBILE_TEXT.filePreview) ||
+        (input && input.a.text === MOBILE_TEXT.noFileChosen)
+      )
+        kind = "file";
+      else if (cls === ANDROID_CLASS.switch) kind = "boolean";
+      else if (cls === ANDROID_CLASS.datePicker) kind = "date";
+      else if (has((n) => n.cls.endsWith("Button") && n.a.text === MOBILE_TEXT.dropdownSelect)) kind = "dropdown";
+      else if (cls === ANDROID_CLASS.editText) kind = "input";
       else if (/signature/i.test(title)) kind = "signature";
       // on-screen position of the control (input if present, else the question) for the comfort check
       const anchor = input || node;
@@ -277,8 +286,7 @@ class SurveyFormScreen extends BasePage {
   comfortablyVisible(box) {
     const v = this.viewport;
     if (!box || !v) return false;
-    const h = v.y2 - v.y1;
-    return box.y1 >= v.y1 + h * 0.08 && box.y1 + Math.min(box.y2 - box.y1, h * 0.3) <= v.y1 + h * 0.8;
+    return this.bandPosition(box.y1, box.y2 - box.y1, v.y1, v.y2 - v.y1) === "inside";
   }
 
   async answerKnown({ qid, title, kind, box }, { used }) {
@@ -327,7 +335,7 @@ class SurveyFormScreen extends BasePage {
         }
       }
       if (rescan) continue;
-      const hasPads = /class="android\.widget\.EditText"[^>]*text="Signature/.test(this.lastSource || "");
+      const hasPads = MOBILE.signaturePadInSource.test(this.lastSource || "");
       if (!(await this.scrollPage("down", 0.6, { before: this.lastSource, noPads: !hasPads }))) {
         // end of page: anything still unclassified gets the slower scrolling path
         for (const q of await this.snapshotQuestions()) {
@@ -363,7 +371,7 @@ class SurveyFormScreen extends BasePage {
     if (await this.exists(MOBILE.formNextBtn)) pressed = MOBILE.formNextBtn;
     else if (await this.exists(MOBILE.formCompleteBtn)) pressed = MOBILE.formCompleteBtn;
     else {
-      const btn = await this.scrollToText("Complete", 60);
+      const btn = await this.scrollToText(MOBILE_TEXT.formComplete, 60);
       if (!(await btn.isExisting())) return "no navigation button";
       pressed = MOBILE.formCompleteBtn;
     }
@@ -378,7 +386,7 @@ class SurveyFormScreen extends BasePage {
           if (now && now !== before) return (outcome = "page changed");
           return false;
         },
-        { timeout: MOBILE_TIMEOUTS.default, interval: 1000 },
+        { timeout: MOBILE_TIMEOUTS.default, interval: MOBILE_TIMEOUTS.pollSlow },
       )
       .catch(() => {});
     return outcome;
@@ -410,6 +418,7 @@ class SurveyFormScreen extends BasePage {
     await this.hideKeyboard();
     for (let i = 0; i < 60 && !(await this.exists(MOBILE.formCompleteBtn)); i++) {
       const sc = await this.firstScrollable();
+      if (!sc) break; // nothing to scroll: try the Complete button as it is
       const moved = await driver.execute("mobile: scrollGesture", { elementId: sc.elementId, direction: "down", percent: 0.9 });
       await this.hideKeyboard(); // a gesture can focus a field; never type into it
       if (!moved) break;
@@ -423,7 +432,7 @@ class SurveyFormScreen extends BasePage {
           if (await this.exists(MOBILE.formErrorTexts)) return (outcome = "errors (prefilled form not touched)");
           return false;
         },
-        { timeout: MOBILE_TIMEOUTS.form, interval: 1000 },
+        { timeout: MOBILE_TIMEOUTS.form, interval: MOBILE_TIMEOUTS.pollSlow },
       )
       .catch(() => {});
     return outcome;

@@ -2,6 +2,12 @@
 // Uses the WebdriverIO globals `driver` and `$$` provided by the test runner.
 const { MOBILE, MOBILE_TIMEOUTS, KEYCODES } = require("../../common/mobileSelectors");
 
+// The comfortable middle band of a scroll view, as shares of its height: below `bottom` an element sits
+// under the bottom tab bar, above `top` it is clipped. Tall elements only need `maxShare` of the view visible.
+const COMFORT_BAND = { top: 0.08, bottom: 0.8, maxShare: 0.3 };
+// Smallest pad-free band (share of the scroll view's height) a swipe can run in without touching a pad.
+const MIN_SWIPE_BAND = 0.07;
+
 class BasePage {
   // Existence by match count: WebdriverIO's `$` is strict and throws when a selector matches twice.
   async exists(selector) {
@@ -11,10 +17,17 @@ class BasePage {
   async first(selector, timeout = MOBILE_TIMEOUTS.default) {
     await driver.waitUntil(async () => this.exists(selector), {
       timeout,
-      interval: 500,
+      interval: MOBILE_TIMEOUTS.poll,
       timeoutMsg: `not found: ${selector}`,
     });
     return (await $$(selector))[0];
+  }
+
+  // True when `selector` appears within `timeout`; false (no throw) when it does not.
+  async appearsWithin(selector, timeout) {
+    return this.first(selector, timeout)
+      .then(() => true)
+      .catch(() => false);
   }
 
   async tap(selector, timeout = MOBILE_TIMEOUTS.default) {
@@ -28,7 +41,10 @@ class BasePage {
     for (let i = 1; i <= attempts; i++) {
       if (await this.exists(buttonSelector)) await this.tap(buttonSelector);
       const closed = await driver
-        .waitUntil(async () => !(await this.exists(dialogMarker)), { timeout: 4000, interval: 400 })
+        .waitUntil(async () => !(await this.exists(dialogMarker)), {
+          timeout: MOBILE_TIMEOUTS.short,
+          interval: MOBILE_TIMEOUTS.poll,
+        })
         .then(() => true)
         .catch(() => false);
       if (closed) return;
@@ -39,7 +55,7 @@ class BasePage {
   async waitForGone(selector, timeout = MOBILE_TIMEOUTS.default) {
     await driver.waitUntil(async () => !(await this.exists(selector)), {
       timeout,
-      interval: 500,
+      interval: MOBILE_TIMEOUTS.poll,
       timeoutMsg: `still present: ${selector}`,
     });
   }
@@ -51,7 +67,7 @@ class BasePage {
         for (const s of selectors) if (await this.exists(s)) return (found = s);
         return false;
       },
-      { timeout, interval: 700, timeoutMsg: `none of: ${selectors.join(" | ")}` },
+      { timeout, interval: MOBILE_TIMEOUTS.poll, timeoutMsg: `none of: ${selectors.join(" | ")}` },
     );
     return found;
   }
@@ -65,6 +81,14 @@ class BasePage {
     return `android=new UiScrollable(new UiSelector().scrollable(true)).setMaxSearchSwipes(${maxSwipes}).scrollIntoView(${uiSelector})`;
   }
 
+  // "below" | "above" | "inside" the comfortable middle band (COMFORT_BAND) of a scroll view.
+  bandPosition(top, height, viewTop, viewHeight) {
+    const visiblePart = Math.min(height, viewHeight * COMFORT_BAND.maxShare);
+    if (top + visiblePart > viewTop + viewHeight * COMFORT_BAND.bottom) return "below";
+    if (top < viewTop + viewHeight * COMFORT_BAND.top) return "above";
+    return "inside";
+  }
+
   // UiScrollable stops as soon as an element is barely on screen; at the bottom edge it sits under the
   // app's bottom tab bar, where taps land on the bar. Nudge it into the comfortable middle band.
   async settleIntoView(el, selector) {
@@ -73,8 +97,9 @@ class BasePage {
     for (let i = 0; i < 3; i++) {
       const s = await driver.getElementRect(sc.elementId);
       const r = await driver.getElementRect(el.elementId);
-      if (r.y + Math.min(r.height, s.height * 0.3) > s.y + s.height * 0.8) await this.scrollPage("down", 0.3);
-      else if (r.y < s.y + s.height * 0.08) await this.scrollPage("up", 0.2);
+      const position = this.bandPosition(r.y, r.height, s.y, s.height);
+      if (position === "below") await this.scrollPage("down", 0.3);
+      else if (position === "above") await this.scrollPage("up", 0.2);
       else break;
       el = await $(selector);
     }
@@ -131,7 +156,7 @@ class BasePage {
     }
     if (cursor < r.y + r.height) bands.push([cursor, r.y + r.height]);
     const best = bands.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))[0];
-    if (!best || best[1] - best[0] < 120) return false;
+    if (!best || best[1] - best[0] < r.height * MIN_SWIPE_BAND) return false;
     // intentional stabilization: a signature pad is on screen, so swipe inside the pad-free band.
     // Points are derived at runtime from the scroll container's and pads' own rects (no fixed coordinates).
     const before = await driver.getPageSource();
@@ -163,13 +188,17 @@ class BasePage {
 
   // Digits as individual key events: bulk typing drops characters in WebView/PIN inputs, and
   // HTML number inputs reject setValue.
+  async pressDigits(digits) {
+    for (const ch of String(digits)) await this.pressKey(KEYCODES.digit0 + Number(ch));
+  }
+
   async typeDigits(el, digits, clear = true) {
     await el.click();
     if (clear) {
       await this.pressKey(KEYCODES.moveEnd);
       await this.pressKey(KEYCODES.del, 16);
     }
-    for (const ch of String(digits)) await this.pressKey(KEYCODES.digit0 + Number(ch));
+    await this.pressDigits(digits);
     await this.hideKeyboard();
   }
 

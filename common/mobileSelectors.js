@@ -6,6 +6,30 @@ const MOBILE_TIMEOUTS = {
   default: 20000,
   long: 60000,
   form: 30000,
+  short: 5000, // a quick "did it react?" probe before a bounded re-try
+  formOpen: 8000, // first tap on a form's View button; a second tap follows if the form did not open
+  poll: 500, // waitUntil interval for element checks
+  pollSlow: 1000, // waitUntil interval for checks that read the whole page source or app package
+};
+
+// App UI copy the selectors and the page-source classifier match on (single source for both).
+const MOBILE_TEXT = {
+  newlyAssigned: "Newly Assigned",
+  cardSeparator: " · ",
+  cardTaskType: "Client Assessment",
+  getLocation: "Get Current Location",
+  selectFile: "Select File",
+  filePreview: "File preview",
+  noFileChosen: "No file chosen",
+  dropdownSelect: "Select",
+  clear: "Clear",
+  formComplete: "Complete",
+};
+
+const ANDROID_CLASS = {
+  switch: "android.widget.Switch",
+  datePicker: "android.widget.DatePicker",
+  editText: "android.widget.EditText",
 };
 
 const MOBILE = {
@@ -41,7 +65,9 @@ const MOBILE = {
   filterApplyBtn: '//*[@content-desc="Apply"]',
   sectionsStrip: "//android.widget.HorizontalScrollView",
   sectionHeader: (name) => `//android.widget.TextView[@text="${name}"]`,
-  taskCard: (title, group) => `//*[contains(@content-desc,"${title}, Client Assessment · ${group}")]`,
+  newlyAssignedHeader: `//android.widget.TextView[@text="${MOBILE_TEXT.newlyAssigned}"]`,
+  taskCard: (title, group) =>
+    `//*[contains(@content-desc,"${title}, ${MOBILE_TEXT.cardTaskType}${MOBILE_TEXT.cardSeparator}${group}")]`,
   groupTaskCards: (group) => `//*[starts-with(@content-desc,"TASK-") and contains(@content-desc,"· ${group}")]`,
 
   // Task detail
@@ -73,9 +99,12 @@ const MOBILE = {
   question: (qid) => `//*[@resource-id="${qid}"]`,
   questionTitle: (qid) => `//*[@resource-id="${qid}_ariaTitle"]`,
   questionInput: (qid) => `//*[@resource-id="${qid}i"]`,
-  questionInputOfClass: (qid, cls) => `//*[@resource-id="${qid}i"][@class="${cls}"]`,
+  questionSwitch: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.switch}"]`,
+  questionDatePicker: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.datePicker}"]`,
+  questionEditText: (qid) => `//*[@resource-id="${qid}i"][@class="${ANDROID_CLASS.editText}"]`,
   questionInputOrDropdown: (qid) => `//*[@resource-id="${qid}i" or @resource-id="${qid}i_0"]`,
-  questionChild: (qid, xp) => `//*[@resource-id="${qid}"]${xp}`,
+  dropdownSelectBtn: (qid) => `//*[@resource-id="${qid}"]//android.widget.Button[@text="${MOBILE_TEXT.dropdownSelect}"]`,
+  dropdownClearBtn: (qid) => `//*[@resource-id="${qid}"]//android.widget.Button[@text="${MOBILE_TEXT.clear}"]`,
   questionIsContainer: (qid) =>
     `//*[@resource-id="${qid}"]//*[starts-with(@resource-id,"sp_") or (starts-with(@resource-id,"sq_") and not(starts-with(@resource-id,"${qid}")))]`,
   dropdownList: (qid) => `//*[@resource-id="${qid}i_list"]`,
@@ -84,13 +113,18 @@ const MOBILE = {
   dropdownShownValue: (qid) => `//*[@resource-id="${qid}i"]//android.widget.TextView[@text!=""]`,
   dropdownPopupOkBtn: '(//android.widget.Button[@text="OK"])[last()]',
   booleanOption: (qid, text) => `(//*[@resource-id="${qid}"]//*[@text="${text}"])[last()]`,
-  fileUploaded: (qid) => `//*[@resource-id="${qid}"]//*[@content-desc="File preview" or @text="Clear"]`,
-  fileSelectBtn: (qid) => `//*[@resource-id="${qid}"]//*[@text="Select File"]`,
-  fileNoFileChosen: (qid) => `//*[@resource-id="${qid}i"][@text="No file chosen"]`,
-  locationBtn: (qid) => `//*[@resource-id="${qid}"]//android.widget.Button[contains(@text,"Get Current Location")]`,
-  locationInline: (qid) => `//*[@resource-id="${qid}"][contains(@text,"Get Current Location")]`,
+  fileUploaded: (qid) =>
+    `//*[@resource-id="${qid}"]//*[@content-desc="${MOBILE_TEXT.filePreview}" or @text="${MOBILE_TEXT.clear}"]`,
+  fileSelectBtn: (qid) => `//*[@resource-id="${qid}"]//*[@text="${MOBILE_TEXT.selectFile}"]`,
+  filePreview: (qid) => `//*[@resource-id="${qid}"]//*[@content-desc="${MOBILE_TEXT.filePreview}"]`,
+  fileNoFileChosen: (qid) => `//*[@resource-id="${qid}i"][@text="${MOBILE_TEXT.noFileChosen}"]`,
+  locationBtn: (qid) =>
+    `//*[@resource-id="${qid}"]//android.widget.Button[contains(@text,"${MOBILE_TEXT.getLocation}")]`,
+  locationInline: (qid) => `//*[@resource-id="${qid}"][contains(@text,"${MOBILE_TEXT.getLocation}")]`,
   locationEmpty: (qid) => `//*[@resource-id="${qid}"]//*[@text="No location selected"]`,
   signaturePads: '//android.widget.EditText[starts-with(@text,"Signature")]',
+  // the same signature-pad test, run on a page-source XML string already in hand (no extra device call)
+  signaturePadInSource: /class="android\.widget\.EditText"[^>]*text="Signature/,
 
   // Android native date picker
   datePickerYearHeader: '//*[@resource-id="android:id/date_picker_header_year"]',
@@ -115,4 +149,4 @@ const MOBILE = {
 
 const KEYCODES = { tab: 61, enter: 66, del: 67, down: 20, moveEnd: 123, digit0: 7 };
 
-module.exports = { MOBILE, MOBILE_TIMEOUTS, KEYCODES };
+module.exports = { MOBILE, MOBILE_TIMEOUTS, MOBILE_TEXT, ANDROID_CLASS, KEYCODES };
