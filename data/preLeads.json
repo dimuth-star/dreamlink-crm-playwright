@@ -1,8 +1,6 @@
 {
   "dataCorrectSearch": {
-    "keyword": "ZUMA SG",
-    "expectedCount": 1,
-    "groupName": "ZUMA SG"
+    "expectedCount": 1
   },
   "preLeadNumberSearch": {
     "expectedCount": 1

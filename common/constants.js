@@ -23,10 +23,24 @@ const SELECTORS = {
   recordCount: ".dl-pager-range span",
   groupNameLink: 'a.ellipsis[data-doctype="DL DreamSave Group"]',
   groupSearchInput: 'input[data-fieldname="group_name"]',
+  groupEligibilityScoreFilter:
+    '.standard-filter-section input[data-fieldname="dl_eligibility_score_filter"]',
+  groupRowCheckbox: 'input[type="checkbox"]',
+  // "Products and Eligibility" cell: one line per product, "<product><score badge><status badge>"
+  groupProductLine: ".dl-products-cell > div",
+  // the score badge has no title; the status badge carries its label as title (colour varies by status)
+  groupProductScoreBadge: "span.badge:not([title])",
+  groupProductStatusBadge: "span.badge[title]",
 
   // DreamSave Group detail page
   groupNameDetail:
     '[data-fieldname="group_name"] .control-value.like-disabled-input',
+  groupProductsTab: '[role="tab"][data-fieldname="products_tab"]',
+  groupProductCard: "article.dl-product-card",
+  groupProductCardName: ".dl-product-card__identity strong",
+  // failed rows of the product's "Current Eligibility" criteria (present while the panel is collapsed)
+  groupFailedCriterionName:
+    ".dl-current-eligibility .dl-criterion-row--danger .dl-criterion-copy strong",
 
   // Logout
   logoutMenuTrigger: "a.sidebar-header",
@@ -206,6 +220,7 @@ const SELECTORS = {
   // Leads list page
   leadsPageTitle: 'a.title-text[title="Leads"]',
   leadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
+  leadSavingGroupCell: '.list-row-col[data-fieldname="dl_saving_group"] a',
   leadNameLink: 'a.ellipsis[data-doctype="DL Lead"]',
 
   // Lead detail page
