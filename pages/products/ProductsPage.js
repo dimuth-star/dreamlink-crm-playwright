@@ -11,6 +11,10 @@ class ProductsPage extends BasePage {
       .locator('[id="page-List/DL Product/List"]')
       .locator(SELECTORS.deskListRow);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
+    this.searchInput = page.locator(SELECTORS.productSearchInput);
+    this.noResultsMessage = page
+      .locator(SELECTORS.deskNoResultsMessage)
+      .first();
   }
 
   async open() {
@@ -54,6 +58,55 @@ class ProductsPage extends BasePage {
     await firstProductLink.click();
     await this.page.waitForLoadState("domcontentloaded");
     return productName.trim();
+  }
+
+  // A product name to search for, read from the loaded list (no fixed record needed).
+  async readFirstProductName() {
+    const firstName = this.productListRow
+      .first()
+      .locator(SELECTORS.productNameLink);
+    await expect(
+      firstName,
+      "Products list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstName.innerText()).trim();
+  }
+
+  async searchByProductName(keyword) {
+    await this.searchInput.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.searchInput.fill(keyword);
+    await this.loadingIndicator.waitFor({
+      state: "hidden",
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  // --- search assertions ---
+  async expectExactRowCount(expectedCount) {
+    await expect(this.productListRow).toHaveCount(expectedCount, {
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectProductListed(name) {
+    await expect(
+      this.productListRow.getByRole("link", { name, exact: true }),
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+  }
+
+  async expectAllResultsContain(keyword) {
+    await expect(
+      this.productListRow.filter({ hasNotText: keyword }),
+    ).toHaveCount(0, { timeout: TIMEOUTS.default });
+  }
+
+  async expectNoResults(expectedMessage) {
+    await expect(this.noResultsMessage).toHaveText(expectedMessage, {
+      timeout: TIMEOUTS.default,
+    });
   }
 }
 

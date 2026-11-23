@@ -90,25 +90,39 @@ const SELECTORS = {
   criteriaSetNoResultsMessage: "p.text-foreground.text-base",
 
   // Products list page
-  productsPageTitle: 'a.title-text[title="Product"]',
+  productsPageTitle: 'a.title-text[title="Products"]',
   productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
   productNameLink: 'a.ellipsis[data-doctype="DL Product"]',
-  productSearchField: '//input[@placeholder="Product Name"]',
+  productSearchInput:
+    '.standard-filter-section input[data-fieldname="product_name"]',
 
-  // Add Product page
-  addProductPageTitle: '//div[normalize-space()="Product Details"]',
-  productNameInput: '.control-input [data-fieldname="product_name"]',
-  productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
-  productDescriptionInput: '//textarea[@type="text"]',
-  productRulesTitle: '//div[normalize-space()="Rules Settings"]',
-  productRulesDropdown: '//button[@title="FAST Credit Rule Set"]',
-  productEligibilityCriteriaTitle:
-    '//div[@class="section-head"][normalize-space()="Eligibility Criteria"]',
-  productGroupsTypesTitle: '//label[normalize-space()="Group Types"]',
-  productDSCriteriaSetSelect:
-    '//input[@placeholder="Eligibility Criteria Set"]',
-  productDSSelectedCriteria: '//p[@title="Dim Seven Test"]',
-  productSaveBtn: '[data-label="Save"] .alt-underline',
+  // Add Product page / Product detail (one Frappe control per data-fieldname)
+  productNameInput: '.form-layout input[data-fieldname="product_name"]:visible',
+  productCodeInput: '.form-layout input[data-fieldname="product_ds_code"]:visible',
+  // Product Type is fixed to "Loan" and shown as a read-only value
+  productTypeValue:
+    '.form-layout [data-fieldname="product_type"] .control-value:visible',
+  productDescriptionInput:
+    '.form-layout textarea[data-fieldname="description"]:visible',
+  productCreditRuleSetSelect:
+    '.form-layout select[data-fieldname="credit_rule_set"]:visible',
+  productAutoApprovalInput:
+    '.form-layout input[data-fieldname="auto_approval_threshold"]:visible',
+  // Group Types table: one fixed row per group type, each with an Eligibility Criteria Set link field
+  productGroupTypeRow:
+    '.form-layout [data-fieldname="group_types"] .grid-body .grid-row:visible',
+  productGroupTypeCell:
+    '.grid-static-col[data-fieldname="group_type"] .static-area',
+  productCriteriaSetCell:
+    '.grid-static-col[data-fieldname="eligibility_criteria_set"]',
+  productCriteriaSetValue:
+    '.grid-static-col[data-fieldname="eligibility_criteria_set"] .static-area',
+  productCriteriaSetInput: 'input[data-fieldname="eligibility_criteria_set"]',
+  productSaveBtn: 'button[data-label="Save"]:visible',
+  productStatusIndicator: ".page-head .indicator-pill:visible",
+  // a non-zero Auto-Approval Threshold asks for confirmation on Save
+  productConfirmDialog: ".modal.fade.show",
+  productConfirmDialogBtn: ".modal.fade.show button.btn-modal-primary",
 
   // Geofence List Page
   geofenceListPageTitle: '[data-slot="card-title"]',
