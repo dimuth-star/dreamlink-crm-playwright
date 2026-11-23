@@ -3,6 +3,9 @@ const { MOBILE, MOBILE_TIMEOUTS } = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 const { NativeDatePicker } = require("./components/NativeDatePicker");
 
+// More than any task has (the KYC task has the most); a form that keeps coming back as pending stops the test.
+const MAX_FORMS_PER_TASK = 8;
+
 class TaskDetailScreen extends BasePage {
   constructor({ toasts }) {
     super();
@@ -28,13 +31,9 @@ class TaskDetailScreen extends BasePage {
     await this.expectToast(this.toasts.inProgress);
   }
 
-  // Bring the Forms list clear of the bottom action bar (which can cover the last form row).
-  async revealForms() {
-    await this.scrollToText(MOBILE.detailBottomAnchorText);
-  }
-
   async nextPendingForm() {
-    await this.revealForms();
+    // bring the Forms list clear of the bottom action bar (which can cover the last form row)
+    await this.scrollToText(MOBILE.detailBottomAnchorText);
     const rows = await $$(MOBILE.pendingFormRow);
     if (!rows.length) return null;
     return { row: rows[0], name: (await rows[0].getAttribute("content-desc")).split(", ")[0] };
@@ -53,7 +52,7 @@ class TaskDetailScreen extends BasePage {
 
   // Fill (or, for prefilled forms, just complete) every form that is not Completed yet.
   async completeAllForms(formScreen, { prefilled = false } = {}) {
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < MAX_FORMS_PER_TASK; i++) {
       const pending = await this.nextPendingForm();
       if (!pending) return;
       await this.openForm(pending.row);

@@ -11,6 +11,13 @@ const { GalleryPicker } = require("./components/GalleryPicker");
 // After answering one of these the layout below can move, so the next question needs a fresh snapshot.
 const LAYOUT_CHANGING = new Set(["file", "date", "dropdown", "signature", "unknown"]);
 const MAX_SNAPSHOTS_PER_PAGE = 120;
+const MAX_SCROLLS_PER_PAGE = 80; // the longest form page (3 leaders' KYC) needs about 40
+const MAX_FORM_PAGES = 8; // the longest form has 3 pages
+const VALIDATION_FIX_PASSES = 2; // the loan-term field needs one in every run
+// The first tap on a date input or dropdown can only move focus off the previous field.
+const DATE_OPEN_ATTEMPTS = 2;
+const DROPDOWN_OPEN_ATTEMPTS = 3;
+const MAX_FILE_BUTTON_SCROLLS = 4; // "Select File" sits just below the question title
 
 class SurveyFormScreen extends BasePage {
   // group: the uploaded group's fixture block, so member count and phone always match what CRM holds
@@ -42,7 +49,8 @@ class SurveyFormScreen extends BasePage {
 
   async answerFile(qid, title) {
     const selectBtn = MOBILE.fileSelectBtn(qid);
-    for (let k = 0; k < 4 && !(await this.exists(selectBtn)) && !(await this.exists(MOBILE.fileUploaded(qid))); k++) {
+    for (let i = 0; i < MAX_FILE_BUTTON_SCROLLS; i++) {
+      if ((await this.exists(selectBtn)) || (await this.exists(MOBILE.fileUploaded(qid)))) break;
       await this.scrollPage("down", 0.2);
     }
     if (await this.exists(MOBILE.fileUploaded(qid))) return this.note(qid, "file", title, "already uploaded");
@@ -71,10 +79,9 @@ class SurveyFormScreen extends BasePage {
     if (current && !force && (!fromRule || current === isoDate(date))) {
       return this.note(qid, "date", title, `kept "${current}"`);
     }
-    for (let attempt = 1; attempt <= 2; attempt++) {
+    for (let attempt = 0; attempt < DATE_OPEN_ATTEMPTS; attempt++) {
       await this.hideKeyboard();
       await input.click();
-      // the first tap can be swallowed (it only moves focus off another field)
       if (!(await this.appearsWithin(MOBILE.datePickerYearHeader, MOBILE_TIMEOUTS.short))) await input.click();
       await this.datePicker.pick(date);
       // commit: move focus off the date input (its own title), then read the value back
@@ -108,11 +115,11 @@ class SurveyFormScreen extends BasePage {
     return false;
   }
 
-  // Focus + Arrow Down opens the list; the first tap can be swallowed while focus leaves the previous field.
+  // Focus + Arrow Down opens the list.
   async openDropdownList(qid, title) {
     const input = await this.scrollToResourceIdMatching(`^${qid}i_(0|undefined)$`);
     await this.hideKeyboard();
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 0; attempt < DROPDOWN_OPEN_ATTEMPTS; attempt++) {
       await input.click();
       await this.pressKey(KEYCODES.down);
       if (await this.appearsWithin(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.short)) return;
@@ -138,7 +145,8 @@ class SurveyFormScreen extends BasePage {
     } else {
       await this.tap(MOBILE.dropdownOption(qid, want));
     }
-    await this.waitForGone(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.default).catch(() => {});
+    // the read-back in answerDropdown decides whether the choice stuck
+    await this.disappearsWithin(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.default);
   }
 
   async answerDropdown(qid, title, force, used) {
@@ -304,8 +312,10 @@ class SurveyFormScreen extends BasePage {
   async erroredQuestionIds() {
     const ids = new Set();
     await this.scrollToTop();
-    for (let s = 0; s < 80; s++) {
-      for (const c of await $$(MOBILE.formErrorContainers)) ids.add((await c.getAttribute("resource-id")).replace(/_errors$/, ""));
+    for (let i = 0; i < MAX_SCROLLS_PER_PAGE; i++) {
+      for (const c of await $$(MOBILE.formErrorContainers)) {
+        ids.add((await c.getAttribute("resource-id")).replace(/_errors$/, ""));
+      }
       if (!(await this.scrollPage("down", 0.7))) break;
     }
     return [...ids];
@@ -320,22 +330,23 @@ class SurveyFormScreen extends BasePage {
   // Polls the named checks in order until one is true; "no change" when none is within `timeout`.
   async firstOutcome(outcomes, timeout) {
     let outcome = "no change";
-    await driver
-      .waitUntil(
-        async () => {
-          for (const [name, happened] of outcomes) if (await happened()) return (outcome = name);
-          return false;
-        },
-        { timeout, interval: MOBILE_TIMEOUTS.pollSlow },
-      )
-      .catch(() => {});
+    const hasOutcome = async () => {
+      for (const [name, happened] of outcomes) {
+        if (await happened()) {
+          outcome = name;
+          return true;
+        }
+      }
+      return false;
+    };
+    await this.within(timeout, hasOutcome, MOBILE_TIMEOUTS.pollSlow);
     return outcome;
   }
 
   async navigationButton() {
     if (await this.exists(MOBILE.formNextBtn)) return MOBILE.formNextBtn;
     if (await this.exists(MOBILE.formCompleteBtn)) return MOBILE.formCompleteBtn;
-    const btn = await this.scrollToText(MOBILE_TEXT.formComplete, 60);
+    const btn = await this.scrollToText(MOBILE_TEXT.formComplete, MAX_SCROLLS_PER_PAGE);
     return (await btn.isExisting()) ? MOBILE.formCompleteBtn : null;
   }
 
@@ -358,16 +369,16 @@ class SurveyFormScreen extends BasePage {
     );
   }
 
-  async fillAndComplete({ maxPages = 8 } = {}) {
+  async fillAndComplete() {
     const seen = new Set();
     const used = {};
-    for (let page = 0; page < maxPages; page++) {
+    for (let page = 0; page < MAX_FORM_PAGES; page++) {
       const pt = await $$(MOBILE.pageTitle);
       this.log(`--- page ${page + 1}: ${pt.length ? await pt[0].getText() : "?"}`);
       await this.fillCurrentPage(seen, used);
       let outcome = await this.advance();
       // targeted fix pass: re-answer only the questions the form flagged
-      for (let fix = 0; fix < 2 && outcome === "errors"; fix++) {
+      for (let fix = 0; fix < VALIDATION_FIX_PASSES && outcome === "errors"; fix++) {
         const errored = await this.erroredQuestionIds();
         this.log(`--- fixing validation errors on: ${errored.join(", ")}`);
         for (const qid of errored) await this.answer(qid, { force: true, used });
@@ -382,7 +393,7 @@ class SurveyFormScreen extends BasePage {
   // Prefilled forms (e.g. FAST Insurance KYC): touch no field — scroll to Complete and press it.
   async completePrefilled() {
     await this.hideKeyboard();
-    for (let i = 0; i < 60 && !(await this.exists(MOBILE.formCompleteBtn)); i++) {
+    for (let i = 0; i < MAX_SCROLLS_PER_PAGE && !(await this.exists(MOBILE.formCompleteBtn)); i++) {
       const moved = await this.scrollPage("down", 0.9);
       await this.hideKeyboard(); // a gesture can focus a field; never type into it
       if (!moved) break; // end of the page: try the Complete button as it is

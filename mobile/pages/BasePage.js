@@ -7,6 +7,13 @@ const { MOBILE, MOBILE_TIMEOUTS, KEYCODES } = require("../../common/mobileSelect
 const COMFORT_BAND = { top: 0.08, bottom: 0.8, maxShare: 0.3 };
 // Smallest pad-free band (share of the scroll view's height) a swipe can run in without touching a pad.
 const MIN_SWIPE_BAND = 0.07;
+// A tap that lands while a dialog is still animating in is ignored; the second tap always worked.
+const DIALOG_TAP_ATTEMPTS = 3;
+// One nudge is normally enough to move an element out from under the tab bar; three covers tall ones.
+const MAX_SETTLE_NUDGES = 3;
+const SEARCH_SWIPES = 30; // UiScrollable swipes before giving up on finding an element
+const MAX_SCROLLS_TO_TOP = 25;
+const FIELD_CLEAR_KEYS = 16; // Delete presses that empty any value these forms hold
 
 // The tallest stretch of [top, bottom] that no `blocked` [start, end] range covers, or null.
 function widestFreeBand(top, bottom, blocked) {
@@ -26,20 +33,40 @@ class BasePage {
     return (await $$(selector)).length > 0;
   }
 
-  async first(selector, timeout = MOBILE_TIMEOUTS.default) {
-    await driver.waitUntil(async () => this.exists(selector), {
-      timeout,
-      interval: MOBILE_TIMEOUTS.poll,
-      timeoutMsg: `not found: ${selector}`,
-    });
-    return (await $$(selector))[0];
+  // True when `condition` holds within `timeout`, false when it does not (never throws on timeout).
+  async within(timeout, condition, interval = MOBILE_TIMEOUTS.poll) {
+    return driver.waitUntil(condition, { timeout, interval }).then(
+      () => true,
+      () => false,
+    );
   }
 
-  // True when `selector` appears within `timeout`; false (no throw) when it does not.
   async appearsWithin(selector, timeout) {
-    return this.first(selector, timeout)
-      .then(() => true)
-      .catch(() => false);
+    return this.within(timeout, () => this.exists(selector));
+  }
+
+  async disappearsWithin(selector, timeout) {
+    return this.within(timeout, async () => !(await this.exists(selector)));
+  }
+
+  // The first of `selectors` to appear within `timeout`, or null.
+  async firstToAppear(selectors, timeout = MOBILE_TIMEOUTS.default) {
+    let found = null;
+    await this.within(timeout, async () => {
+      for (const s of selectors) {
+        if (await this.exists(s)) {
+          found = s;
+          return true;
+        }
+      }
+      return false;
+    });
+    return found;
+  }
+
+  async first(selector, timeout = MOBILE_TIMEOUTS.default) {
+    if (!(await this.appearsWithin(selector, timeout))) throw new Error(`not found: ${selector}`);
+    return (await $$(selector))[0];
   }
 
   async tap(selector, timeout = MOBILE_TIMEOUTS.default) {
@@ -47,40 +74,22 @@ class BasePage {
     await el.click();
   }
 
-  // Tap a dialog button and make sure the dialog actually closed. A tap that lands while the dialog
-  // is still animating in is ignored by the app, so re-tap (bounded) until `dialogMarker` is gone.
-  async tapUntilGone(buttonSelector, dialogMarker, attempts = 3) {
-    for (let i = 1; i <= attempts; i++) {
+  // Tap a dialog button and make sure the dialog actually closed (re-tap if the first tap was ignored).
+  async tapUntilGone(buttonSelector, dialogMarker) {
+    for (let i = 0; i < DIALOG_TAP_ATTEMPTS; i++) {
       if (await this.exists(buttonSelector)) await this.tap(buttonSelector);
-      const closed = await driver
-        .waitUntil(async () => !(await this.exists(dialogMarker)), {
-          timeout: MOBILE_TIMEOUTS.short,
-          interval: MOBILE_TIMEOUTS.poll,
-        })
-        .then(() => true)
-        .catch(() => false);
-      if (closed) return;
+      if (await this.disappearsWithin(dialogMarker, MOBILE_TIMEOUTS.short)) return;
     }
     throw new Error(`dialog did not close after tapping ${buttonSelector}`);
   }
 
   async waitForGone(selector, timeout = MOBILE_TIMEOUTS.default) {
-    await driver.waitUntil(async () => !(await this.exists(selector)), {
-      timeout,
-      interval: MOBILE_TIMEOUTS.poll,
-      timeoutMsg: `still present: ${selector}`,
-    });
+    if (!(await this.disappearsWithin(selector, timeout))) throw new Error(`still present: ${selector}`);
   }
 
   async waitForAny(selectors, timeout = MOBILE_TIMEOUTS.default) {
-    let found = null;
-    await driver.waitUntil(
-      async () => {
-        for (const s of selectors) if (await this.exists(s)) return (found = s);
-        return false;
-      },
-      { timeout, interval: MOBILE_TIMEOUTS.poll, timeoutMsg: `none of: ${selectors.join(" | ")}` },
-    );
+    const found = await this.firstToAppear(selectors, timeout);
+    if (!found) throw new Error(`none of: ${selectors.join(" | ")}`);
     return found;
   }
 
@@ -89,7 +98,7 @@ class BasePage {
   }
 
   // Element-based scroll into view (UiScrollable). No coordinates involved.
-  scrollIntoViewSelector(uiSelector, maxSwipes = 30) {
+  scrollIntoViewSelector(uiSelector, maxSwipes = SEARCH_SWIPES) {
     return `android=new UiScrollable(new UiSelector().scrollable(true)).setMaxSearchSwipes(${maxSwipes}).scrollIntoView(${uiSelector})`;
   }
 
@@ -106,7 +115,7 @@ class BasePage {
   async settleIntoView(el, selector) {
     const sc = await this.firstScrollable();
     if (!sc) return el;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < MAX_SETTLE_NUDGES; i++) {
       const s = await driver.getElementRect(sc.elementId);
       const r = await driver.getElementRect(el.elementId);
       const position = this.bandPosition(r.y, r.height, s.y, s.height);
@@ -131,7 +140,7 @@ class BasePage {
     return this.settleIntoView(el, `android=new UiSelector().resourceIdMatches("${regex}")`);
   }
 
-  async scrollToText(text, maxSwipes = 30) {
+  async scrollToText(text, maxSwipes = SEARCH_SWIPES) {
     return $(this.scrollIntoViewSelector(`new UiSelector().text("${text}")`, maxSwipes));
   }
 
@@ -183,8 +192,8 @@ class BasePage {
     return (await driver.getPageSource()) !== before;
   }
 
-  async scrollToTop(maxScrolls = 25) {
-    for (let i = 0; i < maxScrolls; i++) if (!(await this.scrollPage("up", 1.0))) break;
+  async scrollToTop() {
+    for (let i = 0; i < MAX_SCROLLS_TO_TOP; i++) if (!(await this.scrollPage("up", 1.0))) break;
   }
 
   async hideKeyboard() {
@@ -201,18 +210,12 @@ class BasePage {
     for (const ch of String(digits)) await this.pressKey(KEYCODES.digit0 + Number(ch));
   }
 
-  async typeDigits(el, digits, clear = true) {
+  async typeDigits(el, digits) {
     await el.click();
-    if (clear) {
-      await this.pressKey(KEYCODES.moveEnd);
-      await this.pressKey(KEYCODES.del, 16);
-    }
+    await this.pressKey(KEYCODES.moveEnd);
+    await this.pressKey(KEYCODES.del, FIELD_CLEAR_KEYS);
     await this.pressDigits(digits);
     await this.hideKeyboard();
-  }
-
-  async currentPackage() {
-    return driver.getCurrentPackage();
   }
 }
 

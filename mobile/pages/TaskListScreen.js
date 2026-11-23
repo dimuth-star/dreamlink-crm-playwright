@@ -11,6 +11,9 @@ const SECTION = { newlyAssigned: 0, toDo: 1, inProgress: 2, completed: 3 };
 // mid-way by an earlier run are found by following the lifecycle.
 const SEARCH_ORDER = [SECTION.newlyAssigned, SECTION.inProgress, SECTION.toDo, SECTION.completed];
 const MAX_SECTION_SWIPES = 8; // 5 pages: enough to cross the whole pager in either direction
+// Task detail -> form -> nested dialog is the deepest the app can be left; 6 backs always reach the list.
+const MAX_BACKS_TO_LIST = 6;
+const MAX_BACKS_TO_CLOSE_FILTER = 3; // group dropdown, then the sheet
 
 class TaskListScreen extends BasePage {
   constructor() {
@@ -21,10 +24,9 @@ class TaskListScreen extends BasePage {
 
   // Back out of task detail / forms until the list is showing.
   async goToList() {
-    for (let i = 0; i < 6 && !(await this.exists(MOBILE.myTasksTitle)); i++) {
+    for (let i = 0; i < MAX_BACKS_TO_LIST && !(await this.exists(MOBILE.myTasksTitle)); i++) {
       await driver.back();
-      await this.waitForAny([MOBILE.myTasksTitle, MOBILE.markCompletedBtn, MOBILE.surveyContainer], MOBILE_TIMEOUTS.default)
-        .catch(() => {});
+      await this.firstToAppear([MOBILE.myTasksTitle, MOBILE.markCompletedBtn, MOBILE.surveyContainer]);
     }
     await this.first(MOBILE.myTasksTitle);
   }
@@ -46,13 +48,8 @@ class TaskListScreen extends BasePage {
   async swipeSection(direction, from) {
     const strip = await this.sectionsStrip();
     await driver.execute("mobile: scrollGesture", { elementId: strip.elementId, direction, percent: 1.0 });
-    // let the pager settle on the next page before its header is read again
-    await driver
-      .waitUntil(async () => (await this.currentSection()) !== from, {
-        timeout: MOBILE_TIMEOUTS.short,
-        interval: MOBILE_TIMEOUTS.poll,
-      })
-      .catch(() => {});
+    // let the pager settle on the next page; goToSection reads the header again either way
+    await this.within(MOBILE_TIMEOUTS.short, async () => (await this.currentSection()) !== from);
   }
 
   // Swipe until the section's own header is on screen: the position is read, never counted.
@@ -79,7 +76,9 @@ class TaskListScreen extends BasePage {
       return true;
     }
     // close the dropdown and the sheet without applying anything
-    for (let i = 0; i < 3 && (await this.exists(MOBILE.filterSheetTitle)); i++) await driver.back();
+    for (let i = 0; i < MAX_BACKS_TO_CLOSE_FILTER && (await this.exists(MOBILE.filterSheetTitle)); i++) {
+      await driver.back();
+    }
     return false;
   }
 
