@@ -4,6 +4,7 @@ const { FormsPage } = require("../../pages/forms/FormsPage");
 const { FormDetailPage } = require("../../pages/forms/FormDetailPage");
 const { FormCreatePage } = require("../../pages/forms/FormCreatePage");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const formsData = require("../../data/forms.json");
 
 test.describe("DreamLink CRM - Forms", () => {
@@ -37,19 +38,19 @@ test.describe("DreamLink CRM - Forms", () => {
     await formDetailPage.expectStatusNotEmpty();
   });
 
-  test("TC-FM-03 | Valid keyword search returns matching result containing the keyword", async ({
+  test("TC-FM-03 | Searching a form name read from the list returns that form and only matching results", async ({
     page,
   }) => {
-    const { keyword } = formsData.validSearch;
+    const keyword = await formsPage.readFirstFormName();
     await formsPage.searchByKeyword(keyword);
-    await formsPage.expectExactResultCount(1);
-    await formsPage.expectResultContainsKeyword(keyword);
+    await formsPage.expectAllResultsContain(keyword);
+    await formsPage.expectFormListed(keyword);
   });
 
   test("TC-FM-04 | Invalid keyword search displays no results message", async ({
     page,
   }) => {
-    const { keyword } = formsData.invalidSearch;
+    const keyword = noMatchKeyword(formsData.invalidSearch.keywordPrefix);
     await formsPage.searchByKeyword(keyword);
     await formsPage.expectNoResultsMessage(formsData.noResultsMessage);
   });

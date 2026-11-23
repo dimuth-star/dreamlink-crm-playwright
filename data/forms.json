@@ -1,9 +1,6 @@
 {
-  "validSearch": {
-    "keyword": "QAForm 1343"
-  },
   "invalidSearch": {
-    "keyword": "invalid"
+    "keywordPrefix": "zz-no-match-"
   },
   "noResultsMessage": "No forms match your search.",
   "createForm": {

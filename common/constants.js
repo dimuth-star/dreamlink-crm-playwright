@@ -256,7 +256,8 @@ const SELECTORS = {
   /// Forms list page
   formsPageTitle: "span.app-shell__breadcrumb-label--current",
   formsListRow: 'tr.forms-list-item[tabindex="0"]',
-  formsResultCount: "div.forms-list-page__results-count",
+  // list pager range, e.g. "1–20 of 62" ("0–0 of 0" when nothing matches)
+  formsResultCount: "div.list-pagination__results-count",
   formsSearchInput: "input#search",
   formsNoResultsMessage: "p.forms-list-page__empty-text",
   formsItemName: "span.forms-list-item__name",
