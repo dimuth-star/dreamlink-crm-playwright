@@ -10,6 +10,8 @@ const MOBILE_TIMEOUTS = {
   formOpen: 8000, // first tap on a form's View button; a second tap follows if the form did not open
   poll: 500, // waitUntil interval for element checks
   pollSlow: 1000, // waitUntil interval for checks that read the whole page source or app package
+  // mocha limit per task: the longest one (Complete Group Loan Application, 3-leader KYC) passes in 5-10 min
+  task: 15 * 60 * 1000,
 };
 
 // App UI copy the selectors and the page-source classifier match on (single source for both).

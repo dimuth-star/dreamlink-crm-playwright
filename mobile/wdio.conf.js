@@ -11,6 +11,12 @@ const APPIUM_PORT = Number(process.env.APPIUM_PORT || 4723);
 const FO_APP = getFoApp();
 const FO_PERMISSIONS = ["CAMERA", "RECORD_AUDIO", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"];
 
+// FO_STRICT=1: no spec retries, so a run only passes if it is clean (use it for stability runs).
+const STRICT = process.env.FO_STRICT === "1";
+const SPEC_FILE_RETRIES = STRICT ? 0 : 2;
+// Each finished worker is one attempt at the spec: more than one attempt means a retry was needed.
+const attempts = [];
+
 // Reuse an Appium server that is already running; otherwise let the appium service start one.
 function appiumAlreadyRunning() {
   const probe = `require("http").get("http://127.0.0.1:${APPIUM_PORT}/status",r=>process.exit(r.statusCode===200?0:1))` +
@@ -40,8 +46,9 @@ exports.config = {
     },
   ],
   // If the UiAutomator2 instrumentation drops mid-run, start a fresh session and rerun the spec.
-  // Every step is idempotent (completed tasks are skipped, answered fields kept), so a retry resumes.
-  specFileRetries: 2,
+  // Every step is idempotent (done steps are skipped, answered fields kept), so a retry resumes.
+  // A pass that needed a retry is reported as such by onComplete (see below).
+  specFileRetries: SPEC_FILE_RETRIES,
   specFileRetriesDelay: 5,
   logLevel: "warn",
   waitforTimeout: MOBILE_TIMEOUTS.default,
@@ -51,7 +58,7 @@ exports.config = {
   framework: "mocha",
   mochaOpts: {
     ui: "bdd",
-    timeout: 60 * 60 * 1000, // safety limit per task; the 3-leader KYC task is the longest
+    timeout: MOBILE_TIMEOUTS.task,
     bail: true, // tasks run in a fixed order; Insurance Registration must stay last
   },
   reporters: ["spec", ["allure", { outputDir: path.join(__dirname, "..", "allure-results") }]],
@@ -63,5 +70,20 @@ exports.config = {
     for (const p of FO_PERMISSIONS) {
       execSync(`adb -s ${FO_APP.udid} shell pm grant ${FO_APP.appPackage} android.permission.${p}`, { stdio: "ignore" });
     }
+  },
+
+  onWorkerEnd(cid, exitCode) {
+    attempts.push(exitCode);
+  },
+
+  // One summary line, so a green run that needed a retry is never mistaken for a clean one.
+  onComplete(exitCode) {
+    const retries = Math.max(0, attempts.length - 1);
+    const mode = STRICT ? "FO_STRICT=1, retries off" : `retries allowed: ${SPEC_FILE_RETRIES}`;
+    let result;
+    if (exitCode !== 0) result = `FAILED after ${attempts.length} attempt(s)`;
+    else if (retries) result = `PASSED AFTER ${retries} RETR${retries > 1 ? "IES" : "Y"} - not a clean run`;
+    else result = "PASSED cleanly, no retries";
+    console.log(`\n=== FO mobile summary: ${result} [${mode}]\n`);
   },
 };
