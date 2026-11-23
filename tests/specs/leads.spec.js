@@ -44,7 +44,8 @@ test.describe("DreamLink CRM - Leads", () => {
   test("TC-LD-03 | Search by lead number returns exactly 1 result containing the searched keyword", async ({
     page,
   }) => {
-    const { keyword, expectedCount } = leadsData.validSearch;
+    const keyword = await leadsPage.readFirstLeadNumber();
+    const { expectedCount } = leadsData.validSearch;
     await leadsSearchBar.searchByLeadNumber(keyword);
     await leadsSearchBar.expectResultCount(expectedCount);
     await leadsSearchBar.expectLeadVisible(keyword);

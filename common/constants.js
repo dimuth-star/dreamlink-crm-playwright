@@ -198,7 +198,7 @@ const SELECTORS = {
   fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
 
   // Leads list page
-  leadsPageTitle: 'a.title-text[title="Lead"]',
+  leadsPageTitle: 'a.title-text[title="Leads"]',
   leadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
   leadNameLink: 'a.ellipsis[data-doctype="DL Lead"]',
 

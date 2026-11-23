@@ -22,6 +22,18 @@ class LeadsPage {
     await expect(this.pageTitle).toBeVisible({ timeout: TIMEOUTS.default });
   }
 
+  // A lead number to search for, read from the loaded list (no fixed record needed).
+  async readFirstLeadNumber() {
+    const firstNumber = this.leadListRow
+      .first()
+      .locator(SELECTORS.leadNameLink);
+    await expect(
+      firstNumber,
+      "Leads list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstNumber.innerText()).trim();
+  }
+
   async clickFirstLead() {
     await this.loadingIndicator.waitFor({
       state: "hidden",

@@ -9,7 +9,7 @@ class LeadsSearchBar extends BasePage {
     this.leadNumberInput = page.locator(SELECTORS.leadNumberSearchInput);
     this.savingGroupInput = page.locator(SELECTORS.leadSavingGroupSearchInput);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
-    this.recordCount = page.locator(SELECTORS.recordCount);
+    this.leadListRow = page.locator(SELECTORS.deskListRow);
     this.noResultsMessage = page.locator(SELECTORS.leadsNoResultsMessage);
   }
 
@@ -33,8 +33,9 @@ class LeadsSearchBar extends BasePage {
     });
   }
 
+  // number of rows the search returned
   async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+    await expect(this.leadListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
   }
