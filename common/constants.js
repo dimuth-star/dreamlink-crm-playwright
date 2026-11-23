@@ -278,7 +278,7 @@ const SELECTORS = {
   formPreviewSummaryValue: "span.form-preview-page__summary-value",
 
   // Tasks list page
-  tasksPageTitle: 'a.title-text[title="Task"]',
+  tasksPageTitle: 'a.title-text[title="Tasks"]',
   tasksNavLink: 'a.item-anchor[href="/desk/dl-task"]',
   taskNameLink: 'a.ellipsis[data-doctype="DL Task"]',
   taskNumberCell: "div.list-row-col .level-item a",

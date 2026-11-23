@@ -42,6 +42,18 @@ class TasksPage extends BasePage {
     await expect(this.recordCount).toBeVisible({ timeout: TIMEOUTS.default });
   }
 
+  // A task number to search for, read from the loaded list (no fixed record needed).
+  async readFirstTaskNumber() {
+    const firstNumber = this.taskListRow
+      .first()
+      .locator(SELECTORS.taskNameLink);
+    await expect(
+      firstNumber,
+      "Tasks list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstNumber.innerText()).trim();
+  }
+
   async clickFirstTask() {
     await this.loadingIndicator.waitFor({
       state: "hidden",
