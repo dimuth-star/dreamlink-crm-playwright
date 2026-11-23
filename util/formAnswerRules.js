@@ -1,6 +1,14 @@
 // Which answer each Field Officer form question gets. Pure logic (no device calls), driven by
 // data/foEndToEnd.json -> formAnswers; checked by `npm run test:form-rules`.
-const { resolveDateToken, toZambianIntl } = require("./clientDataGenerator");
+const {
+  resolveDateToken,
+  toZambianIntl,
+  randomName,
+  randomNrc,
+  randomTpin,
+  randomMobile,
+  reserveId,
+} = require("./clientDataGenerator");
 
 // The answer keys a rule may use for each kind of question.
 const ANSWER_KEYS_BY_KIND = {
@@ -24,9 +32,17 @@ class FormAnswerRules {
     this.tokens = {
       "{{members}}": String(group.memberCount),
       "{{mobileIntl}}": toZambianIntl(group.phoneNumber),
-      "{{idNumber}}": client.idNumber,
       "{{idType}}": client.idType,
+      "{{district}}": group.district,
+      // function tokens give every question its own value: unique IDs, random names
+      "{{idNumber}}": () => randomNrc(),
+      "{{tpin}}": () => randomTpin(),
+      "{{mobile}}": () => randomMobile(),
+      "{{firstName}}": () => randomName(client.names, "first"),
+      "{{lastName}}": () => randomName(client.names, "last"),
+      "{{fullName}}": () => randomName(client.names, "full"),
     };
+    reserveId(this.tokens["{{mobileIntl}}"]); // the group's own phone is never handed to a person
     this.rules = formAnswers.rules.map((r) => ({
       re: new RegExp(r.pattern, "i"),
       answer: r.answer,
@@ -37,7 +53,10 @@ class FormAnswerRules {
   }
 
   resolve(value) {
-    return typeof value === "string" ? (this.tokens[value] ?? value) : value;
+    if (typeof value !== "string") return value;
+    const token = this.tokens[value];
+    if (typeof token === "function") return token();
+    return token ?? value;
   }
 
   // First rule whose pattern matches the title AND whose answer fits the question kind.

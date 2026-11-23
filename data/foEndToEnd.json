@@ -47,16 +47,51 @@
   },
   "client": {
     "idType": "NRC",
-    "idNumber": "123456/12/1",
-    "dobAgeYears": 18,
-    "dobExtraDays": 30
+    "dobAgeYears": { "min": 25, "max": 55 },
+    "dobExtraDays": 30,
+    "names": {
+      "first": [
+        "Mwila",
+        "Chanda",
+        "Bwalya",
+        "Mutale",
+        "Musonda",
+        "Chilufya",
+        "Kondwani",
+        "Thandiwe",
+        "Natasha",
+        "Grace",
+        "Esther",
+        "Ruth",
+        "Joseph",
+        "Peter",
+        "Brian",
+        "Memory"
+      ],
+      "last": [
+        "Banda",
+        "Phiri",
+        "Mwale",
+        "Tembo",
+        "Zulu",
+        "Mulenga",
+        "Lungu",
+        "Sakala",
+        "Mumba",
+        "Ngoma",
+        "Daka",
+        "Mbewe",
+        "Chileshe",
+        "Kunda"
+      ]
+    }
   },
   "formAnswers": {
-    "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}} and {{mobileIntl}} (from upload.memberCount / upload.phoneNumber), {{idNumber}}, {{idType}}; dates: dob, daysAgo:N, daysAhead:N, monthsAhead:N.",
+    "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}}, {{mobileIntl}} (the group contact's phone) and {{district}} (from upload), {{idType}}; generated fresh for every question: {{idNumber}} (unique NRC), {{tpin}} (unique TPIN), {{mobile}} (unique Zambian mobile), {{firstName}} / {{lastName}} / {{fullName}} (from client.names). Dates: dob (random age in client.dobAgeYears), daysAgo:N, daysAhead:N, monthsAgo:N, monthsAhead:N.",
     "rules": [
       {
         "pattern": "\\btpin\\b|tax payer",
-        "answer": { "number": "1234567890" }
+        "answer": { "number": "{{tpin}}" }
       },
       { "pattern": "vfz group id", "answer": { "number": "12" } },
       {
@@ -87,6 +122,10 @@
         "answer": { "date": "daysAhead:30" }
       },
       {
+        "pattern": "group opening date",
+        "answer": { "date": "monthsAgo:2" }
+      },
+      {
         "pattern": "identity type|id type|type of id|identification type",
         "answer": { "option": "{{idType}}" }
       },
@@ -95,10 +134,35 @@
         "answer": { "text": "{{idNumber}}" }
       },
       {
-        "pattern": "phone|mobile|telephone|contact number",
+        "pattern": "phone number of the main contact",
         "answer": { "text": "{{mobileIntl}}" }
       },
+      {
+        "pattern": "phone|mobile|telephone|contact number",
+        "answer": { "text": "{{mobile}}" }
+      },
       { "pattern": "nationality|country code", "answer": { "text": "ZM" } },
+      {
+        "pattern": "^first name|given name",
+        "answer": { "text": "{{firstName}}" }
+      },
+      {
+        "pattern": "^surname|last name|family name",
+        "answer": { "text": "{{lastName}}" }
+      },
+      {
+        "pattern": "next of kin name|^facilitator$",
+        "answer": { "text": "{{fullName}}" }
+      },
+      { "pattern": "^district$", "answer": { "text": "{{district}}" } },
+      {
+        "pattern": "^street$|street is the group|next of kin address",
+        "answer": { "text": "Plot 12, Cairo Road" }
+      },
+      {
+        "pattern": "purpose of the loan",
+        "answer": { "text": "Expand the group's farming business" }
+      },
       {
         "pattern": "written off|defaulted|overdue|arrears",
         "answer": { "number": "0" }

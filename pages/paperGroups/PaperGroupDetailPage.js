@@ -6,6 +6,7 @@ class PaperGroupDetailPage extends BasePage {
   constructor(page) {
     super(page);
     this.villageInput = page.locator(SELECTORS.paperGroupVillageInput);
+    this.villageField = page.locator(SELECTORS.paperGroupVillageField);
     this.saveBtn = page.locator(SELECTORS.paperGroupSaveBtn);
     this.deleteBtn = page.locator(SELECTORS.paperGroupDeleteBtn);
     this.deleteConfirmBtn = page.locator(SELECTORS.paperGroupDeleteConfirmBtn);
@@ -54,7 +55,8 @@ class PaperGroupDetailPage extends BasePage {
     await expect(this.page).toHaveURL(/dl-non-dreamsave-group\//, {
       timeout: TIMEOUTS.navigation,
     });
-    await expect(this.villageInput).toBeVisible({ timeout: TIMEOUTS.default });
+    // the field, not its input: a locked (assessed) group shows Village as a read-only value
+    await expect(this.villageField).toBeVisible({ timeout: TIMEOUTS.default });
   }
 
   // The DreamLink number is written by a background job after Start Assessment and can lag behind the

@@ -299,6 +299,9 @@ const SELECTORS = {
 
   // Paper Group detail page
   paperGroupVillageInput: '.form-layout input[data-fieldname="village"]:visible',
+  // the whole Village field: an input box, or a read-only value once the group is locked (assessed)
+  paperGroupVillageField:
+    '.form-layout .frappe-control[data-fieldname="village"]:visible',
   paperGroupSaveBtn: 'button[data-label="Save"]:visible',
   paperGroupDeleteBtn: 'button[data-label="Delete"]:visible',
   paperGroupUnsavedIndicator: ".indicator-pill:visible",

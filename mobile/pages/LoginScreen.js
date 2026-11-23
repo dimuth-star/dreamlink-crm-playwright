@@ -20,13 +20,16 @@ const START_SCREENS = [
   MOBILE.confirmCompleteText,
   MOBILE.confirmStartText,
   MOBILE.scheduleDialogTitle,
+  MOBILE.keycloakUsernameInput,
 ];
-// A dialog left open by an interrupted run (date picker, schedule / start / complete confirmation).
+// A dialog left open by an interrupted run (date picker, schedule / start / complete confirmation),
+// or a Keycloak browser tab left on top of the app by an interrupted login: Back closes each of them.
 const LEFTOVER_DIALOGS = [
   MOBILE.datePickerYearHeader,
   MOBILE.confirmCompleteText,
   MOBILE.confirmStartText,
   MOBILE.scheduleDialogTitle,
+  MOBILE.keycloakUsernameInput,
 ];
 // Signed in but resumed on another screen (task detail, a form, an open filter sheet).
 const OTHER_SIGNED_IN_SCREENS = [
@@ -45,25 +48,26 @@ class LoginScreen extends BasePage {
     this.appPackage = appPackage;
   }
 
-  // Keycloak opens in the browser's custom tab, whose web content is not in the accessibility tree,
-  // so the password is entered with the keyboard: focus moves username -> password with Tab.
+  // The app opens Keycloak in a Chrome custom tab; Chrome exposes the form, so its fields are used directly.
   async signInWithKeycloak(username, password) {
     await this.first(MOBILE.loginUsernameInput).then((el) =>
       el.setValue(username),
     );
+    await this.hideKeyboard();
     await this.tap(MOBILE.loginContinueBtn);
-    await driver.waitUntil(
-      async () => (await driver.getCurrentPackage()) !== this.appPackage,
-      {
-        timeout: MOBILE_TIMEOUTS.long,
-        interval: MOBILE_TIMEOUTS.pollSlow,
-        timeoutMsg: "Keycloak custom tab did not open",
-      },
+    // the app pre-fills the username; set it only if Keycloak shows something else
+    const usernameField = await this.first(
+      MOBILE.keycloakUsernameInput,
+      MOBILE_TIMEOUTS.long,
     );
-    // page fully loaded once the custom tab's progress bar is gone
-    await this.waitForGone(MOBILE.customTabProgress, MOBILE_TIMEOUTS.long);
-    await this.pressKey(KEYCODES.tab);
+    if ((await usernameField.getText()) !== username) {
+      await usernameField.clearValue();
+      await usernameField.setValue(username);
+    }
+    await this.tap(MOBILE.keycloakPasswordInput);
     await driver.execute("mobile: type", { text: password });
+    // Enter in the password field submits the form. Do not hide the keyboard first: Android may do that
+    // with Back, which closes the browser tab (and with it the form).
     await this.pressKey(KEYCODES.enter);
     await driver.waitUntil(
       async () => (await driver.getCurrentPackage()) === this.appPackage,
@@ -104,7 +108,12 @@ class LoginScreen extends BasePage {
   // interrupted run) until My Tasks shows with nothing on top of it.
   // The loop re-reads the screen after every step, so a back that did not land yet is simply seen again.
   async ensureLoggedIn(credentials) {
+    this.signedIn = false;
     for (let step = 0; step < MAX_START_STEPS; step++) {
+      // Bring the app to the front (or launch it) before every step: a new session does not do that for
+      // an app left in the background, and Back on a leftover Keycloak tab can leave the app altogether.
+      // When the app is already in front this does nothing.
+      await driver.activateApp(this.appPackage);
       const screen = await this.waitForAny(START_SCREENS, MOBILE_TIMEOUTS.long);
       if (
         screen === MOBILE.myTasksTitle &&
@@ -130,9 +139,16 @@ class LoginScreen extends BasePage {
   }
 
   async completeOnboardingStep(screen, { username, password, pin }) {
-    if (screen === MOBILE.loginTitle)
+    if (screen === MOBILE.loginTitle) {
+      // sign in at most once per run: repeated failed logins can lock the Field Officer account
+      if (this.signedIn) {
+        throw new Error(
+          "the app asked to log in again after signing in; check FO_USERNAME / FO_PASSWORD (not retrying)",
+        );
+      }
+      this.signedIn = true;
       await this.signInWithKeycloak(username, password);
-    else if (screen === MOBILE.settingUpText)
+    } else if (screen === MOBILE.settingUpText)
       await this.waitForGone(MOBILE.settingUpText, MOBILE_TIMEOUTS.long);
     else if (screen === MOBILE.pinTitle) await this.createOfflinePin(pin);
     else if (screen === MOBILE.enableLocationTitle) await this.enableLocation();

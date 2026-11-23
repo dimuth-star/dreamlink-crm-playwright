@@ -376,8 +376,8 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
 - E2E files are named `*.e2e.js` so the main config (`*.spec.js`) never runs them; `playwright.config.js` is untouched.
 - Each run leaves one locked group + lead + tasks on QA (assessed groups cannot be deleted). A run that dies before
   the assessment leaves an unlocked, deletable group instead.
-- **Prerequisites:** Android device connected, QA app `com.dreamlink.agent.qa` installed and already onboarded (PIN set),
-  Appium 3 with UiAutomator2. `env/qa.env` needs `ANDROID_UDID`, `FO_APP_PACKAGE`, `FO_APP_ACTIVITY`, `FO_USERNAME`,
+- **Prerequisites:** Android device connected, QA app `com.dreamlink.agent.qa` installed (signed in or not: the run
+  logs in if needed), **Chrome as the default browser** (see *Login* below), Appium 3 with UiAutomator2. `env/qa.env` needs `ANDROID_UDID`, `FO_APP_PACKAGE`, `FO_APP_ACTIVITY`, `FO_USERNAME`,
   `FO_PASSWORD`, `FO_PIN` (`onPrepare` fails fast listing any that are missing). `FO_APP_PATH` is in the env file but
   nothing reads it: the app is not installed by the run. An Appium server already on port 4723 is reused; otherwise
   the wdio appium service starts one.
@@ -387,6 +387,12 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
   `util/surveyQuestions.js` (one classifier, one page-source read per screen). Form answers are rules matched on the
   question title **and** type; a rule overrides a prefilled value, prefilled values are kept only when no rule covers
   them. `{{members}}` / `{{mobileIntl}}` come from the `upload` block, so they always match the uploaded group.
+  Person data is generated per question: names (First Name, Surname, Next of Kin Name, Facilitator) from
+  `client.names`; NRC (`######/##/1`), TPIN (10 digits) and mobile (`+260` 95/96/97/76/77 + 7 digits) are random and
+  **unique within a run**; Date of Birth gives a random age in `client.dobAgeYears` (25–55). The group's own data
+  stays fixed so it matches CRM: the main contact's phone (`{{mobileIntl}}`, never handed to a person) and the
+  district (`{{district}}`). Group opening date = 2 months before the run date. Addresses use
+  "Plot 12, Cairo Road"; any other unmatched free text gets `defaults.text` ("QA Test").
 - **Form checks:** every dropdown choice is read back and a mismatch fails the task (list dropdowns hold the value on
   their `sq_Ni_0` input, rating/popup ones in a TextView). Popup dropdowns cannot select their first option by keyboard;
   a rule asking for it fails clearly. The loan-term number (`sq_68`) needs the validation fix pass in every run; that is
@@ -396,8 +402,16 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
   scrolled to the bottom edge sit under the bottom tab bar (`settleIntoView` nudges them up). Bottom-tab labels start with
   an invisible icon glyph (match with `contains`). Some dropdowns are popups that only commit via keyboard + OK. Dates must
   be committed by moving focus off the input. Signature pads draw on any gesture that starts on them (the only two
-  pointer-coordinate actions are marked `// intentional stabilization:`). Keycloak login runs in a browser custom tab
-  whose fields are not in the accessibility tree (Tab / type / Enter). Mobile forms require phones as `+260…`.
+  pointer-coordinate actions are marked `// intentional stabilization:`). Mobile forms require phones as `+260…`.
+- **Login (logged out):** `ensureLoggedIn` first brings the app to the front (`activateApp`: a new session does not
+  do that for an app left in the background), then handles whatever screen it finds. Keycloak opens in the default
+  browser's custom tab. **The phone's default browser must be Chrome**: Chrome exposes the form fields (`username`,
+  `password`), so the test taps the password field, types, and submits with Enter. Never hide the keyboard there:
+  Android may do it with Back, which closes the tab. Samsung Internet hides the page content from automation, which
+  forces blind Tab typing that put the password in the wrong field. On Samsung phones Chrome can be disabled out of
+  the box: Settings → Apps → Chrome → Enable, then Default apps → Browser app → Chrome. A Keycloak tab left on top
+  of the app by an interrupted login is closed with Back at start-up. The run signs in **at most once**: if the app
+  asks to log in again, it stops instead of retrying, so wrong credentials cannot lock the FO account.
 - Completing tasks makes CRM add follow-up tasks (e.g. "Review Loan Documents"); assert the 6 FO tasks by title only.
 - **Expected duration:** about 14–15 minutes end to end (setup 30–40 s, mobile 12½–14½ min, verify 10–20 s). The
   longest task, Complete Group Loan Application (3-leader KYC), takes 5–10 min. Stability was confirmed with 3

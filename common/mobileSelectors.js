@@ -40,8 +40,10 @@ const MOBILE = {
   loginTitle: '//*[@text="Log in to DreamLink Field App"]',
   loginUsernameInput: "//android.widget.EditText",
   loginContinueBtn: '//*[@content-desc="Continue"]',
-  customTabProgress:
-    '//*[contains(@resource-id,"custom_tab_toolbar_progressbar")]',
+  // Keycloak login page in a Chrome custom tab (Chrome exposes the form fields by their HTML ids;
+  // the device's default browser must be Chrome, see CLAUDE.md §4a)
+  keycloakUsernameInput: '//android.widget.EditText[@resource-id="username"]',
+  keycloakPasswordInput: '//android.widget.EditText[@resource-id="password"]',
   settingUpText: '//*[contains(@text,"Setting up your account")]',
 
   // First-login onboarding
