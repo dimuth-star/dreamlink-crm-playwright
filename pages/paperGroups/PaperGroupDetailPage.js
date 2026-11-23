@@ -7,6 +7,7 @@ class PaperGroupDetailPage extends BasePage {
     super(page);
     this.villageInput = page.locator(SELECTORS.paperGroupVillageInput);
     this.villageField = page.locator(SELECTORS.paperGroupVillageField);
+    this.villageValue = page.locator(SELECTORS.paperGroupVillageValue);
     this.saveBtn = page.locator(SELECTORS.paperGroupSaveBtn);
     this.deleteBtn = page.locator(SELECTORS.paperGroupDeleteBtn);
     this.deleteConfirmBtn = page.locator(SELECTORS.paperGroupDeleteConfirmBtn);
@@ -91,10 +92,22 @@ class PaperGroupDetailPage extends BasePage {
     });
   }
 
+  // The saved value, whether Village is still an input or shown read-only:
+  // after a reload a freshly imported group can be locked again as a draft.
   async expectVillage(village) {
-    await expect(this.villageInput).toHaveValue(village, {
+    await this.villageInput.or(this.villageValue).first().waitFor({
+      state: "visible",
       timeout: TIMEOUTS.default,
     });
+    if (await this.villageInput.isVisible()) {
+      await expect(this.villageInput).toHaveValue(village, {
+        timeout: TIMEOUTS.default,
+      });
+    } else {
+      await expect(this.villageValue).toHaveText(village, {
+        timeout: TIMEOUTS.default,
+      });
+    }
   }
 
   async expectDeletedToast(groupName, messageSuffix) {

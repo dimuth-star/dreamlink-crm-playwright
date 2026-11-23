@@ -327,6 +327,9 @@ const SELECTORS = {
   // the whole Village field: an input box, or a read-only value once the group is locked (assessed)
   paperGroupVillageField:
     '.form-layout .frappe-control[data-fieldname="village"]:visible',
+  // the read-only Village value shown instead of the input while the group is locked (draft or assessed)
+  paperGroupVillageValue:
+    '.form-layout .frappe-control[data-fieldname="village"] .control-value:visible',
   paperGroupSaveBtn: 'button[data-label="Save"]:visible',
   paperGroupDeleteBtn: 'button[data-label="Delete"]:visible',
   paperGroupUnsavedIndicator: ".indicator-pill:visible",
