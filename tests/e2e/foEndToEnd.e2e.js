@@ -86,8 +86,7 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
       await paperGroupsPage.searchByGroupName(groupName);
       await paperGroupsPage.expectResultCount(1);
       await paperGroupsPage.expectFirstRowContains(assessment.classification);
-      await paperGroupsPage.selectFirstGroup();
-      await paperGroupsPage.startAssessment();
+      await paperGroupsPage.startAssessmentWhenReady(groupName);
       await assessmentModal.expectOpen();
       await assessmentModal.selectProduct(assessment.product);
       await assessmentModal.confirm();

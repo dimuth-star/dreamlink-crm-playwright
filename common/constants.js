@@ -310,6 +310,8 @@ const SELECTORS = {
   paperGroupStartAssessmentText: "Start Assessment",
   paperGroupAssessmentModalTitle: "Confirm Start Assessment",
   paperGroupAssessmentResultTitle: "Start Assessment Initiated",
+  // shown instead of the confirmation while a just-imported group is still flagged as a draft
+  paperGroupInvalidSelectionTitle: "Invalid Selection",
   paperGroupAssessmentProductSelect:
     '.modal.fade.show select[data-fieldname="product"]',
   paperGroupDreamLinkNumber:
