@@ -1,5 +1,9 @@
 // Field Officer app login and first-login onboarding. Idempotent: does nothing when already signed in.
-const { MOBILE, MOBILE_TIMEOUTS, KEYCODES } = require("../../common/mobileSelectors");
+const {
+  MOBILE,
+  MOBILE_TIMEOUTS,
+  KEYCODES,
+} = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 
 // Every screen the app can be found on at start, in the order they are checked (first match wins).
@@ -44,23 +48,31 @@ class LoginScreen extends BasePage {
   // Keycloak opens in the browser's custom tab, whose web content is not in the accessibility tree,
   // so the password is entered with the keyboard: focus moves username -> password with Tab.
   async signInWithKeycloak(username, password) {
-    await this.first(MOBILE.loginUsernameInput).then((el) => el.setValue(username));
+    await this.first(MOBILE.loginUsernameInput).then((el) =>
+      el.setValue(username),
+    );
     await this.tap(MOBILE.loginContinueBtn);
-    await driver.waitUntil(async () => (await driver.getCurrentPackage()) !== this.appPackage, {
-      timeout: MOBILE_TIMEOUTS.long,
-      interval: MOBILE_TIMEOUTS.pollSlow,
-      timeoutMsg: "Keycloak custom tab did not open",
-    });
+    await driver.waitUntil(
+      async () => (await driver.getCurrentPackage()) !== this.appPackage,
+      {
+        timeout: MOBILE_TIMEOUTS.long,
+        interval: MOBILE_TIMEOUTS.pollSlow,
+        timeoutMsg: "Keycloak custom tab did not open",
+      },
+    );
     // page fully loaded once the custom tab's progress bar is gone
     await this.waitForGone(MOBILE.customTabProgress, MOBILE_TIMEOUTS.long);
     await this.pressKey(KEYCODES.tab);
     await driver.execute("mobile: type", { text: password });
     await this.pressKey(KEYCODES.enter);
-    await driver.waitUntil(async () => (await driver.getCurrentPackage()) === this.appPackage, {
-      timeout: MOBILE_TIMEOUTS.long,
-      interval: MOBILE_TIMEOUTS.pollSlow,
-      timeoutMsg: "app did not return after Keycloak sign-in",
-    });
+    await driver.waitUntil(
+      async () => (await driver.getCurrentPackage()) === this.appPackage,
+      {
+        timeout: MOBILE_TIMEOUTS.long,
+        interval: MOBILE_TIMEOUTS.pollSlow,
+        timeoutMsg: "app did not return after Keycloak sign-in",
+      },
+    );
   }
 
   async enterPin(box, pin) {
@@ -79,8 +91,13 @@ class LoginScreen extends BasePage {
 
   async enableLocation() {
     await this.tap(MOBILE.enableLocationBtn);
-    const next = await this.waitForAny([MOBILE.permissionAllowWhileUsing, MOBILE.myTasksTitle, MOBILE.pinTitle]);
-    if (next === MOBILE.permissionAllowWhileUsing) await this.tap(MOBILE.permissionAllowWhileUsing);
+    const next = await this.waitForAny([
+      MOBILE.permissionAllowWhileUsing,
+      MOBILE.myTasksTitle,
+      MOBILE.pinTitle,
+    ]);
+    if (next === MOBILE.permissionAllowWhileUsing)
+      await this.tap(MOBILE.permissionAllowWhileUsing);
   }
 
   // Works from whatever screen the app is on (fresh install, signed out, or left mid-task by an
@@ -89,14 +106,22 @@ class LoginScreen extends BasePage {
   async ensureLoggedIn(credentials) {
     for (let step = 0; step < MAX_START_STEPS; step++) {
       const screen = await this.waitForAny(START_SCREENS, MOBILE_TIMEOUTS.long);
-      if (screen === MOBILE.myTasksTitle && !(await this.exists(MOBILE.filterSheetTitle))) return;
+      if (
+        screen === MOBILE.myTasksTitle &&
+        !(await this.exists(MOBILE.filterSheetTitle))
+      )
+        return;
       if (LEFTOVER_DIALOGS.includes(screen)) {
         // cancel it: the task step that opened it is idempotent and opens it again
         await driver.back();
         await this.disappearsWithin(screen, MOBILE_TIMEOUTS.default);
       } else if (OTHER_SIGNED_IN_SCREENS.includes(screen)) {
         await driver.back();
-        await this.firstToAppear([MOBILE.myTasksTitle, MOBILE.appTasksTab, MOBILE.surveyContainer]);
+        await this.firstToAppear([
+          MOBILE.myTasksTitle,
+          MOBILE.appTasksTab,
+          MOBILE.surveyContainer,
+        ]);
       } else {
         await this.completeOnboardingStep(screen, credentials);
       }
@@ -105,15 +130,19 @@ class LoginScreen extends BasePage {
   }
 
   async completeOnboardingStep(screen, { username, password, pin }) {
-    if (screen === MOBILE.loginTitle) await this.signInWithKeycloak(username, password);
-    else if (screen === MOBILE.settingUpText) await this.waitForGone(MOBILE.settingUpText, MOBILE_TIMEOUTS.long);
+    if (screen === MOBILE.loginTitle)
+      await this.signInWithKeycloak(username, password);
+    else if (screen === MOBILE.settingUpText)
+      await this.waitForGone(MOBILE.settingUpText, MOBILE_TIMEOUTS.long);
     else if (screen === MOBILE.pinTitle) await this.createOfflinePin(pin);
     else if (screen === MOBILE.enableLocationTitle) await this.enableLocation();
   }
 
   // --- assertions ---
   async expectOnTaskList() {
-    await expect($(MOBILE.myTasksTitle)).toBeExisting({ wait: MOBILE_TIMEOUTS.long });
+    await expect($(MOBILE.myTasksTitle)).toBeExisting({
+      wait: MOBILE_TIMEOUTS.long,
+    });
   }
 }
 

@@ -11,10 +11,16 @@ class GalleryPicker extends BasePage {
       files: MOBILE.filesPickerFirstItem,
       photos: MOBILE.photoPickerFirstItem,
     };
-    let found = await this.waitForAny(Object.values(states), MOBILE_TIMEOUTS.default);
+    let found = await this.waitForAny(
+      Object.values(states),
+      MOBILE_TIMEOUTS.default,
+    );
     if (found === states.chooser) {
       await this.tap(states.chooser);
-      found = await this.waitForAny([states.files, states.photos], MOBILE_TIMEOUTS.default);
+      found = await this.waitForAny(
+        [states.files, states.photos],
+        MOBILE_TIMEOUTS.default,
+      );
     }
     await this.tap(found);
     for (const confirm of MOBILE.pickerConfirmBtns) {

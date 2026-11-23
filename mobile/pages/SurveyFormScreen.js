@@ -1,15 +1,33 @@
 // Fills the app's SurveyJS forms (rendered in a WebView). Which kind a question is comes from
 // util/surveyQuestions.js; which value it gets comes from util/formAnswerRules.js (fixture rules).
-const { MOBILE, MOBILE_TIMEOUTS, MOBILE_TEXT, KEYCODES } = require("../../common/mobileSelectors");
-const { FormAnswerRules, isoDate, isNumeric } = require("../../util/formAnswerRules");
-const { readSurveySnapshot, questionIdsIn } = require("../../util/surveyQuestions");
+const {
+  MOBILE,
+  MOBILE_TIMEOUTS,
+  MOBILE_TEXT,
+  KEYCODES,
+} = require("../../common/mobileSelectors");
+const {
+  FormAnswerRules,
+  isoDate,
+  isNumeric,
+} = require("../../util/formAnswerRules");
+const {
+  readSurveySnapshot,
+  questionIdsIn,
+} = require("../../util/surveyQuestions");
 const { logInfo, logError } = require("../../util/loggers");
 const { BasePage } = require("./BasePage");
 const { NativeDatePicker } = require("./components/NativeDatePicker");
 const { GalleryPicker } = require("./components/GalleryPicker");
 
 // After answering one of these the layout below can move, so the next question needs a fresh snapshot.
-const LAYOUT_CHANGING = new Set(["file", "date", "dropdown", "signature", "unknown"]);
+const LAYOUT_CHANGING = new Set([
+  "file",
+  "date",
+  "dropdown",
+  "signature",
+  "unknown",
+]);
 const MAX_SNAPSHOTS_PER_PAGE = 120;
 const MAX_SCROLLS_PER_PAGE = 80; // the longest form page (3 leaders' KYC) needs about 40
 const MAX_FORM_PAGES = 8; // the longest form has 3 pages
@@ -41,7 +59,8 @@ class SurveyFormScreen extends BasePage {
   // ---------- question handlers ----------
 
   async answerLocation(qid, title) {
-    if (!(await this.exists(MOBILE.locationEmpty(qid)))) return this.note(qid, "location", title, "already captured");
+    if (!(await this.exists(MOBILE.locationEmpty(qid))))
+      return this.note(qid, "location", title, "already captured");
     await this.tap(MOBILE.locationBtn(qid));
     await this.waitForGone(MOBILE.locationEmpty(qid), MOBILE_TIMEOUTS.long);
     this.note(qid, "location", title, "captured");
@@ -50,15 +69,26 @@ class SurveyFormScreen extends BasePage {
   async answerFile(qid, title) {
     const selectBtn = MOBILE.fileSelectBtn(qid);
     for (let i = 0; i < MAX_FILE_BUTTON_SCROLLS; i++) {
-      if ((await this.exists(selectBtn)) || (await this.exists(MOBILE.fileUploaded(qid)))) break;
+      if (
+        (await this.exists(selectBtn)) ||
+        (await this.exists(MOBILE.fileUploaded(qid)))
+      )
+        break;
       await this.scrollPage("down", 0.2);
     }
-    if (await this.exists(MOBILE.fileUploaded(qid))) return this.note(qid, "file", title, "already uploaded");
+    if (await this.exists(MOBILE.fileUploaded(qid)))
+      return this.note(qid, "file", title, "already uploaded");
     await this.tap(selectBtn);
     await this.gallery.pickFirstImage();
     await driver.waitUntil(
-      async () => (await this.exists(MOBILE.surveyContainer)) && (await this.exists(MOBILE.fileUploaded(qid))),
-      { timeout: MOBILE_TIMEOUTS.form, interval: MOBILE_TIMEOUTS.pollSlow, timeoutMsg: `image not attached to ${qid}` },
+      async () =>
+        (await this.exists(MOBILE.surveyContainer)) &&
+        (await this.exists(MOBILE.fileUploaded(qid))),
+      {
+        timeout: MOBILE_TIMEOUTS.form,
+        interval: MOBILE_TIMEOUTS.pollSlow,
+        timeoutMsg: `image not attached to ${qid}`,
+      },
     );
     this.note(qid, "file", title, "gallery image attached");
   }
@@ -82,20 +112,34 @@ class SurveyFormScreen extends BasePage {
     for (let attempt = 0; attempt < DATE_OPEN_ATTEMPTS; attempt++) {
       await this.hideKeyboard();
       await input.click();
-      if (!(await this.appearsWithin(MOBILE.datePickerYearHeader, MOBILE_TIMEOUTS.short))) await input.click();
+      if (
+        !(await this.appearsWithin(
+          MOBILE.datePickerYearHeader,
+          MOBILE_TIMEOUTS.short,
+        ))
+      )
+        await input.click();
       await this.datePicker.pick(date);
       // commit: move focus off the date input (its own title), then read the value back
       const t = await $$(MOBILE.questionTitle(qid));
       if (t.length) await t[0].click();
-      const value = (await (await this.first(MOBILE.questionInput(qid))).getText()) || "";
-      if (value.trim()) return this.note(qid, "date", title, `${date.toDateString()} (shows "${value}")`);
+      const value =
+        (await (await this.first(MOBILE.questionInput(qid))).getText()) || "";
+      if (value.trim())
+        return this.note(
+          qid,
+          "date",
+          title,
+          `${date.toDateString()} (shows "${value}")`,
+        );
     }
     throw new Error(`date did not stick on ${qid} (${title})`);
   }
 
   // The value a dropdown currently shows ("" when empty). `timeout` waits for a value to render first.
   async shownDropdownValue(qid, timeout = 0) {
-    if (timeout) await this.appearsWithin(MOBILE.dropdownShownValue(qid), timeout);
+    if (timeout)
+      await this.appearsWithin(MOBILE.dropdownShownValue(qid), timeout);
     const shown = await $$(MOBILE.dropdownShownValue(qid));
     return shown.length ? shown[0].getText() : "";
   }
@@ -105,7 +149,8 @@ class SurveyFormScreen extends BasePage {
   async keepPrefilledDropdown(qid, title, force, used) {
     if (!(await this.exists(MOBILE.dropdownClearBtn(qid)))) return false;
     const current = await this.shownDropdownValue(qid);
-    const duplicate = this.answers.isUnique(title) && current && used.has(current);
+    const duplicate =
+      this.answers.isUnique(title) && current && used.has(current);
     if (!duplicate && !force) {
       if (current) used.add(current);
       this.note(qid, "dropdown", title, `kept "${current}"`);
@@ -117,19 +162,28 @@ class SurveyFormScreen extends BasePage {
 
   // Focus + Arrow Down opens the list.
   async openDropdownList(qid, title) {
-    const input = await this.scrollToResourceIdMatching(`^${qid}i_(0|undefined)$`);
+    const input = await this.scrollToResourceIdMatching(
+      `^${qid}i_(0|undefined)$`,
+    );
     await this.hideKeyboard();
     for (let attempt = 0; attempt < DROPDOWN_OPEN_ATTEMPTS; attempt++) {
       await input.click();
       await this.pressKey(KEYCODES.down);
-      if (await this.appearsWithin(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.short)) return;
+      if (
+        await this.appearsWithin(
+          MOBILE.dropdownList(qid),
+          MOBILE_TIMEOUTS.short,
+        )
+      )
+        return;
     }
     throw new Error(`dropdown list for ${qid} (${title}) did not open`);
   }
 
   async dropdownOptions(qid) {
     const texts = [];
-    for (const o of await $$(MOBILE.dropdownOptions(qid))) texts.push(await o.getText());
+    for (const o of await $$(MOBILE.dropdownOptions(qid)))
+      texts.push(await o.getText());
     return texts;
   }
 
@@ -138,7 +192,10 @@ class SurveyFormScreen extends BasePage {
       // popup variant: tapping an option does not commit; navigate with the keyboard, Enter, then OK.
       // Focus starts on the first option and Enter there does not commit, so N presses select option N.
       const index = options.indexOf(want);
-      if (index < 1) throw new Error(`popup dropdown ${qid} (${title}) cannot select its first option "${want}"`);
+      if (index < 1)
+        throw new Error(
+          `popup dropdown ${qid} (${title}) cannot select its first option "${want}"`,
+        );
       await this.pressKey(KEYCODES.down, index);
       await this.pressKey(KEYCODES.enter);
       await this.tap(MOBILE.dropdownPopupOkBtn);
@@ -146,29 +203,45 @@ class SurveyFormScreen extends BasePage {
       await this.tap(MOBILE.dropdownOption(qid, want));
     }
     // the read-back in answerDropdown decides whether the choice stuck
-    await this.disappearsWithin(MOBILE.dropdownList(qid), MOBILE_TIMEOUTS.default);
+    await this.disappearsWithin(
+      MOBILE.dropdownList(qid),
+      MOBILE_TIMEOUTS.default,
+    );
   }
 
   async answerDropdown(qid, title, force, used) {
     used[title] = used[title] || new Set();
-    if (await this.keepPrefilledDropdown(qid, title, force, used[title])) return;
+    if (await this.keepPrefilledDropdown(qid, title, force, used[title]))
+      return;
     await this.openDropdownList(qid, title);
     const options = await this.dropdownOptions(qid);
     const popup = await this.exists(MOBILE.dropdownPopupOkBtn);
-    const want = this.answers.dropdownChoice(title, options, { used: used[title], popup });
+    const want = this.answers.dropdownChoice(title, options, {
+      used: used[title],
+      popup,
+    });
     await this.selectDropdownOption(qid, title, want, options, popup);
     // read back what the form actually holds, so a wrong selection fails here instead of being submitted
     const shown = await this.shownDropdownValue(qid, MOBILE_TIMEOUTS.short);
-    if (shown !== want) throw new Error(`dropdown ${qid} (${title}) shows "${shown}" after choosing "${want}"`);
+    if (shown !== want)
+      throw new Error(
+        `dropdown ${qid} (${title}) shows "${shown}" after choosing "${want}"`,
+      );
     used[title].add(want);
-    this.note(qid, "dropdown", title, `${want}${popup ? " (popup)" : ""} (options: ${options.join(" | ")})`);
+    this.note(
+      qid,
+      "dropdown",
+      title,
+      `${want}${popup ? " (popup)" : ""} (options: ${options.join(" | ")})`,
+    );
   }
 
   async answerInput(qid, title, force) {
     const input = (await $$(MOBILE.questionEditText(qid)))[0];
     const current = (await input.getText()) || "";
     const { value, fromRule, kind } = this.answers.inputValue(title);
-    if (current.trim() && !fromRule && !force) return this.note(qid, "text", title, `kept "${current}"`);
+    if (current.trim() && !fromRule && !force)
+      return this.note(qid, "text", title, `kept "${current}"`);
     if (isNumeric(value)) {
       await this.typeDigits(input, value);
     } else {
@@ -179,7 +252,12 @@ class SurveyFormScreen extends BasePage {
         if (!/convert .* to float|SET_PROGRESS/i.test(e.message)) throw e;
         await this.typeDigits(input, this.answers.defaults.number);
         await this.hideKeyboard();
-        return this.note(qid, "number", title, `${this.answers.defaults.number} (numeric default)`);
+        return this.note(
+          qid,
+          "number",
+          title,
+          `${this.answers.defaults.number} (numeric default)`,
+        );
       }
     }
     await this.hideKeyboard();
@@ -196,7 +274,10 @@ class SurveyFormScreen extends BasePage {
       [0.4, 0.75],
       [0.6, 0.55],
       [0.8, 0.75],
-    ].map(([fx, fy]) => ({ x: Math.round(x + fx * width), y: Math.round(y + fy * height) }));
+    ].map(([fx, fy]) => ({
+      x: Math.round(x + fx * width),
+      y: Math.round(y + fy * height),
+    }));
     await driver
       .action("pointer", { parameters: { pointerType: "touch" } })
       .move(pts[0])
@@ -218,11 +299,14 @@ class SurveyFormScreen extends BasePage {
     if (kind === "file") return this.answerFile(qid, title);
     if (kind === "boolean") return this.answerBoolean(qid, title, force);
     if (kind === "date") return this.answerDate(qid, title, force);
-    if (kind === "dropdown") return this.answerDropdown(qid, title, force, used);
+    if (kind === "dropdown")
+      return this.answerDropdown(qid, title, force, used);
     if (kind === "input") return this.answerInput(qid, title, force);
     if (kind === "signature") return this.answerSignature(qid, title);
     // left to the form's own validation (a required question then comes back in the fix pass)
-    logError(`  [${qid}] question type not recognised, left unanswered: ${title}`);
+    logError(
+      `  [${qid}] question type not recognised, left unanswered: ${title}`,
+    );
   }
 
   // ---------- reading the screen ----------
@@ -241,7 +325,9 @@ class SurveyFormScreen extends BasePage {
   comfortablyVisible(box) {
     const v = this.viewport;
     if (!box || !v) return false;
-    return this.bandPosition(box.y1, box.y2 - box.y1, v.y1, v.y2 - v.y1) === "inside";
+    return (
+      this.bandPosition(box.y1, box.y2 - box.y1, v.y1, v.y2 - v.y1) === "inside"
+    );
   }
 
   // Slow path for one question (fix pass, end of page, controls below the fold): bring it into view,
@@ -267,7 +353,8 @@ class SurveyFormScreen extends BasePage {
     if (question.kind === "container") return undefined;
     if (question.kind === "unknown") return this.answer(question.qid, { used });
     // only search/scroll when the snapshot says the control is not comfortably on screen
-    if (!this.comfortablyVisible(question.box)) await this.scrollToResourceId(question.qid);
+    if (!this.comfortablyVisible(question.box))
+      await this.scrollToResourceId(question.qid);
     return this.answerAs(question, { used });
   }
 
@@ -281,7 +368,12 @@ class SurveyFormScreen extends BasePage {
       const lastChance = s === MAX_SNAPSHOTS_PER_PAGE - 1;
       if (await this.answerVisible(seen, used, lastChance)) continue; // layout moved: take a fresh snapshot
       const hasPads = MOBILE.signaturePadInSource.test(this.lastSource || "");
-      if (!(await this.scrollPage("down", 0.6, { before: this.lastSource, noPads: !hasPads }))) {
+      if (
+        !(await this.scrollPage("down", 0.6, {
+          before: this.lastSource,
+          noPads: !hasPads,
+        }))
+      ) {
         return this.answerRemaining(seen, used); // end of page
       }
     }
@@ -324,7 +416,10 @@ class SurveyFormScreen extends BasePage {
   // The form container briefly drops out of the tree while the WebView redraws between pages, so
   // "closed" needs positive evidence: the container is gone AND the task detail screen is showing.
   async formClosed() {
-    return !(await this.exists(MOBILE.surveyContainer)) && (await this.exists(MOBILE.markCompletedBtn));
+    return (
+      !(await this.exists(MOBILE.surveyContainer)) &&
+      (await this.exists(MOBILE.markCompletedBtn))
+    );
   }
 
   // Polls the named checks in order until one is true; "no change" when none is within `timeout`.
@@ -345,8 +440,12 @@ class SurveyFormScreen extends BasePage {
 
   async navigationButton() {
     if (await this.exists(MOBILE.formNextBtn)) return MOBILE.formNextBtn;
-    if (await this.exists(MOBILE.formCompleteBtn)) return MOBILE.formCompleteBtn;
-    const btn = await this.scrollToText(MOBILE_TEXT.formComplete, MAX_SCROLLS_PER_PAGE);
+    if (await this.exists(MOBILE.formCompleteBtn))
+      return MOBILE.formCompleteBtn;
+    const btn = await this.scrollToText(
+      MOBILE_TEXT.formComplete,
+      MAX_SCROLLS_PER_PAGE,
+    );
     return (await btn.isExisting()) ? MOBILE.formCompleteBtn : null;
   }
 
@@ -360,10 +459,13 @@ class SurveyFormScreen extends BasePage {
       [
         ["closed", () => this.formClosed()],
         ["errors", () => this.exists(MOBILE.formErrorTexts)],
-        ["page changed", async () => {
-          const now = questionIdsIn(await driver.getPageSource()).join(",");
-          return Boolean(now) && now !== before;
-        }],
+        [
+          "page changed",
+          async () => {
+            const now = questionIdsIn(await driver.getPageSource()).join(",");
+            return Boolean(now) && now !== before;
+          },
+        ],
       ],
       MOBILE_TIMEOUTS.default,
     );
@@ -374,14 +476,21 @@ class SurveyFormScreen extends BasePage {
     const used = {};
     for (let page = 0; page < MAX_FORM_PAGES; page++) {
       const pt = await $$(MOBILE.pageTitle);
-      this.log(`--- page ${page + 1}: ${pt.length ? await pt[0].getText() : "?"}`);
+      this.log(
+        `--- page ${page + 1}: ${pt.length ? await pt[0].getText() : "?"}`,
+      );
       await this.fillCurrentPage(seen, used);
       let outcome = await this.advance();
       // targeted fix pass: re-answer only the questions the form flagged
-      for (let fix = 0; fix < VALIDATION_FIX_PASSES && outcome === "errors"; fix++) {
+      for (
+        let fix = 0;
+        fix < VALIDATION_FIX_PASSES && outcome === "errors";
+        fix++
+      ) {
         const errored = await this.erroredQuestionIds();
         this.log(`--- fixing validation errors on: ${errored.join(", ")}`);
-        for (const qid of errored) await this.answer(qid, { force: true, used });
+        for (const qid of errored)
+          await this.answer(qid, { force: true, used });
         outcome = await this.advance();
       }
       this.log(`--- ${outcome}`);
@@ -393,7 +502,11 @@ class SurveyFormScreen extends BasePage {
   // Prefilled forms (e.g. FAST Insurance KYC): touch no field — scroll to Complete and press it.
   async completePrefilled() {
     await this.hideKeyboard();
-    for (let i = 0; i < MAX_SCROLLS_PER_PAGE && !(await this.exists(MOBILE.formCompleteBtn)); i++) {
+    for (
+      let i = 0;
+      i < MAX_SCROLLS_PER_PAGE && !(await this.exists(MOBILE.formCompleteBtn));
+      i++
+    ) {
       const moved = await this.scrollPage("down", 0.9);
       await this.hideKeyboard(); // a gesture can focus a field; never type into it
       if (!moved) break; // end of the page: try the Complete button as it is
@@ -402,7 +515,10 @@ class SurveyFormScreen extends BasePage {
     return this.firstOutcome(
       [
         ["closed", () => this.formClosed()],
-        ["errors (prefilled form not touched)", () => this.exists(MOBILE.formErrorTexts)],
+        [
+          "errors (prefilled form not touched)",
+          () => this.exists(MOBILE.formErrorTexts),
+        ],
       ],
       MOBILE_TIMEOUTS.form,
     );

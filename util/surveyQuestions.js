@@ -2,7 +2,13 @@
 // is classified locally instead of with many round-trips to the device. Questions are exposed as
 // sq_N (question), sq_N_ariaTitle (title) and sq_Ni (its input); sp_N are panels.
 const { MOBILE_TEXT, ANDROID_CLASS } = require("../common/mobileSelectors");
-const { parseUiXml, walk, descendants, idOf, parseBounds } = require("./uiTree");
+const {
+  parseUiXml,
+  walk,
+  descendants,
+  idOf,
+  parseBounds,
+} = require("./uiTree");
 
 const QUESTION_ID = /^sq_\d+$/;
 
@@ -14,16 +20,32 @@ function classifyQuestion(qid, node, byId, title) {
   const input = byId.get(`${qid}i`);
   const cls = input ? input.cls : "";
   const hasLocation = (n) => (n.a.text || "").includes(MOBILE_TEXT.getLocation);
-  if (has((n) => /^sp_/.test(idOf(n)) || (QUESTION_ID.test(idOf(n)) && idOf(n) !== qid))) return "container";
+  if (
+    has(
+      (n) =>
+        /^sp_/.test(idOf(n)) || (QUESTION_ID.test(idOf(n)) && idOf(n) !== qid),
+    )
+  )
+    return "container";
   if (hasLocation(node) || has(hasLocation)) return "location";
   if (
-    has((n) => n.a.text === MOBILE_TEXT.selectFile || n.a["content-desc"] === MOBILE_TEXT.filePreview) ||
+    has(
+      (n) =>
+        n.a.text === MOBILE_TEXT.selectFile ||
+        n.a["content-desc"] === MOBILE_TEXT.filePreview,
+    ) ||
     (input && input.a.text === MOBILE_TEXT.noFileChosen)
   )
     return "file";
   if (cls === ANDROID_CLASS.switch) return "boolean";
   if (cls === ANDROID_CLASS.datePicker) return "date";
-  if (has((n) => n.cls.endsWith("Button") && n.a.text === MOBILE_TEXT.dropdownSelect)) return "dropdown";
+  if (
+    has(
+      (n) =>
+        n.cls.endsWith("Button") && n.a.text === MOBILE_TEXT.dropdownSelect,
+    )
+  )
+    return "dropdown";
   if (cls === ANDROID_CLASS.editText) return "input";
   if (/signature/i.test(title)) return "signature";
   return "unknown";
@@ -37,7 +59,8 @@ function readSurveySnapshot(xml) {
   let viewport = null;
   const byId = new Map();
   walk(tree, (n) => {
-    if (!viewport && n.a.scrollable === "true") viewport = parseBounds(n.a.bounds);
+    if (!viewport && n.a.scrollable === "true")
+      viewport = parseBounds(n.a.bounds);
     const id = idOf(n);
     if (id && !byId.has(id)) byId.set(id, n);
   });
@@ -45,7 +68,9 @@ function readSurveySnapshot(xml) {
   for (const [qid, node] of byId) {
     if (!QUESTION_ID.test(qid)) continue;
     const titleNode = byId.get(`${qid}_ariaTitle`);
-    const title = titleNode ? (titleNode.a.text || "").trim() : `(untitled ${qid})`;
+    const title = titleNode
+      ? (titleNode.a.text || "").trim()
+      : `(untitled ${qid})`;
     const anchor = byId.get(`${qid}i`) || node;
     questions.push({
       qid,
@@ -60,9 +85,9 @@ function readSurveySnapshot(xml) {
 
 // Question ids on screen, in numeric order (used to detect that the form moved to another page).
 function questionIdsIn(xml) {
-  return [...new Set([...xml.matchAll(/resource-id="(sq_\d+)"/g)].map((m) => m[1]))].sort(
-    (a, b) => Number(a.slice(3)) - Number(b.slice(3)),
-  );
+  return [
+    ...new Set([...xml.matchAll(/resource-id="(sq_\d+)"/g)].map((m) => m[1])),
+  ].sort((a, b) => Number(a.slice(3)) - Number(b.slice(3)));
 }
 
 module.exports = { readSurveySnapshot, questionIdsIn };

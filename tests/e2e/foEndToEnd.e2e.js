@@ -7,17 +7,32 @@
 const { test } = require("@playwright/test");
 const { LoginPage } = require("../../pages/user/LoginPage");
 const { PaperGroupsPage } = require("../../pages/paperGroups/PaperGroupsPage");
-const { PaperGroupUploadModal } = require("../../pages/paperGroups/PaperGroupUploadModal");
-const { PaperGroupImportReviewModal } = require("../../pages/paperGroups/PaperGroupImportReviewModal");
-const { PaperGroupAssessmentModal } = require("../../pages/paperGroups/PaperGroupAssessmentModal");
-const { PaperGroupDetailPage } = require("../../pages/paperGroups/PaperGroupDetailPage");
+const {
+  PaperGroupUploadModal,
+} = require("../../pages/paperGroups/PaperGroupUploadModal");
+const {
+  PaperGroupImportReviewModal,
+} = require("../../pages/paperGroups/PaperGroupImportReviewModal");
+const {
+  PaperGroupAssessmentModal,
+} = require("../../pages/paperGroups/PaperGroupAssessmentModal");
+const {
+  PaperGroupDetailPage,
+} = require("../../pages/paperGroups/PaperGroupDetailPage");
 const { LeadsPage } = require("../../pages/leads/LeadsPage");
 const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
 const { getCredentials } = require("../../util/helpers");
-const { buildPaperGroupRows, writePaperGroupsFile } = require("../../util/paperGroupFile");
-const { writeRunState, readRunState, clearRunState } = require("../../util/runState");
+const {
+  buildPaperGroupRows,
+  writePaperGroupsFile,
+} = require("../../util/paperGroupFile");
+const {
+  writeRunState,
+  readRunState,
+  clearRunState,
+} = require("../../util/runState");
 const paperGroupsData = require("../../data/paperGroups.json");
 const foData = require("../../data/foEndToEnd.json");
 
@@ -75,9 +90,14 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
       await paperGroupsPage.clickUploadGroups();
       await uploadModal.uploadFile(paperGroupsData.partner, filePath);
       await reviewModal.expectOpen();
-      await reviewModal.expectSummary(paperGroupsData.validUpload.reviewSummaryMessage);
+      await reviewModal.expectSummary(
+        paperGroupsData.validUpload.reviewSummaryMessage,
+      );
       await reviewModal.proceedWithImport();
-      await reviewModal.expectImportedToast(upload.groupCount, paperGroupsData.validUpload.importedMessageSuffix);
+      await reviewModal.expectImportedToast(
+        upload.groupCount,
+        paperGroupsData.validUpload.importedMessageSuffix,
+      );
       await paperGroupsPage.expectImportFinished();
 
       // Start the assessment
@@ -109,7 +129,10 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
       await leadDetailPage.expectLoaded();
       await leadDetailPage.expectLeadSavingGroup(groupName);
       await leadDetailPage.expectTaskCount(assessment.taskCount);
-      await leadDetailPage.expectAllTasksStatus(assessment.taskCount, assessment.unassignedStatus);
+      await leadDetailPage.expectAllTasksStatus(
+        assessment.taskCount,
+        assessment.unassignedStatus,
+      );
 
       // Assign all tasks to fo.zambia
       await leadDetailPage.clickAssignTasks();
@@ -120,8 +143,14 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
       await assignTasksModal.confirm();
       await assignTasksModal.expectAssignedToast(assignment.successMessage);
       await leadDetailPage.reload();
-      await leadDetailPage.expectAllTasksStatus(assessment.taskCount, assessment.assignedStatus);
-      await leadDetailPage.expectAllTasksAssignedTo(assessment.taskCount, assignment.userName);
+      await leadDetailPage.expectAllTasksStatus(
+        assessment.taskCount,
+        assessment.assignedStatus,
+      );
+      await leadDetailPage.expectAllTasksAssignedTo(
+        assessment.taskCount,
+        assignment.userName,
+      );
 
       // Hand the group over to the mobile step
       writeRunState({ groupName });
@@ -139,7 +168,13 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
     await leadDetailPage.expectLeadSavingGroup(groupName);
     // The 6 Field Officer tasks by title; follow-up tasks the workflow adds (e.g. "Review Loan Documents") are ignored
     const taskTitles = foData.mobile.tasks.map((t) => t.title);
-    await leadDetailPage.expectTasksStatusEventually(taskTitles, assessment.completedStatus);
-    await leadDetailPage.expectTasksStatusEventually(taskTitles, assignment.userName);
+    await leadDetailPage.expectTasksStatusEventually(
+      taskTitles,
+      assessment.completedStatus,
+    );
+    await leadDetailPage.expectTasksStatusEventually(
+      taskTitles,
+      assignment.userName,
+    );
   });
 });

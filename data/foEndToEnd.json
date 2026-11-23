@@ -54,27 +54,72 @@
   "formAnswers": {
     "comment": "First matching rule whose answer fits the question type wins. Tokens: {{members}} and {{mobileIntl}} (from upload.memberCount / upload.phoneNumber), {{idNumber}}, {{idType}}; dates: dob, daysAgo:N, daysAhead:N, monthsAhead:N.",
     "rules": [
-      { "pattern": "\\btpin\\b|tax payer", "answer": { "number": "1234567890" } },
+      {
+        "pattern": "\\btpin\\b|tax payer",
+        "answer": { "number": "1234567890" }
+      },
       { "pattern": "vfz group id", "answer": { "number": "12" } },
-      { "pattern": "politically exposed|\\bpep\\b", "answer": { "bool": "No" } },
-      { "pattern": "date of birth|\\bdob\\b|birth date", "answer": { "date": "dob" } },
-      { "pattern": "issued? date|date of issue|issued on", "answer": { "date": "daysAgo:30" } },
-      { "pattern": "previous cycle.?s share-out amount", "answer": { "number": "100000" } },
+      {
+        "pattern": "politically exposed|\\bpep\\b",
+        "answer": { "bool": "No" }
+      },
+      {
+        "pattern": "date of birth|\\bdob\\b|birth date",
+        "answer": { "date": "dob" }
+      },
+      {
+        "pattern": "issued? date|date of issue|issued on",
+        "answer": { "date": "daysAgo:30" }
+      },
+      {
+        "pattern": "previous cycle.?s share-out amount",
+        "answer": { "number": "100000" }
+      },
       { "pattern": "requested loan amount", "answer": { "number": "20000" } },
       { "pattern": "maximum amount allowed", "answer": { "number": "100000" } },
       { "pattern": "loan term", "answer": { "number": "3" } },
-      { "pattern": "current cycle.?s share-out date", "answer": { "date": "monthsAhead:5" } },
-      { "pattern": "next share-out|upcoming", "answer": { "date": "daysAhead:30" } },
-      { "pattern": "identity type|id type|type of id|identification type", "answer": { "option": "{{idType}}" } },
-      { "pattern": "nrc|id number|identity number|identification number|national id", "answer": { "text": "{{idNumber}}" } },
-      { "pattern": "phone|mobile|telephone|contact number", "answer": { "text": "{{mobileIntl}}" } },
+      {
+        "pattern": "current cycle.?s share-out date",
+        "answer": { "date": "monthsAhead:5" }
+      },
+      {
+        "pattern": "next share-out|upcoming",
+        "answer": { "date": "daysAhead:30" }
+      },
+      {
+        "pattern": "identity type|id type|type of id|identification type",
+        "answer": { "option": "{{idType}}" }
+      },
+      {
+        "pattern": "nrc|id number|identity number|identification number|national id",
+        "answer": { "text": "{{idNumber}}" }
+      },
+      {
+        "pattern": "phone|mobile|telephone|contact number",
+        "answer": { "text": "{{mobileIntl}}" }
+      },
       { "pattern": "nationality|country code", "answer": { "text": "ZM" } },
-      { "pattern": "written off|defaulted|overdue|arrears", "answer": { "number": "0" } },
-      { "pattern": "present today|members present", "answer": { "number": "{{members}}" } },
-      { "pattern": "new in this saving cycle|new members", "answer": { "number": "0" } },
+      {
+        "pattern": "written off|defaulted|overdue|arrears",
+        "answer": { "number": "0" }
+      },
+      {
+        "pattern": "present today|members present",
+        "answer": { "number": "{{members}}" }
+      },
+      {
+        "pattern": "new in this saving cycle|new members",
+        "answer": { "number": "0" }
+      },
       { "pattern": "attended", "answer": { "number": "{{members}}" } },
-      { "pattern": "previous saving cycle|participated in the previous", "answer": { "number": "{{members}}" } },
-      { "pattern": "^number of members|members in group", "answer": { "number": "{{members}}" } },
+      {
+        "pattern": "previous saving cycle|participated in the previous",
+        "answer": { "number": "{{members}}" }
+      },
+      {
+        "pattern": "^number of members|members in group",
+        "answer": { "number": "{{members}}" }
+      },
       { "pattern": "how many|number of|count", "answer": { "number": "3" } },
       { "pattern": "amount|value|share|savings", "answer": { "number": "100" } }
     ],

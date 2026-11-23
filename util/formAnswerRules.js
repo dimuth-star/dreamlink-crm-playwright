@@ -13,7 +13,8 @@ const ANSWER_KEYS_BY_KIND = {
 const isNumeric = (text) => /^\d+$/.test(text);
 const pad = (n) => String(n).padStart(2, "0");
 // The app shows dates as YYYY-MM-DD.
-const isoDate = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const isoDate = (date) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 class FormAnswerRules {
   // group: the uploaded group's fixture block, so member count and phone always match what CRM holds
@@ -26,12 +27,17 @@ class FormAnswerRules {
       "{{idNumber}}": client.idNumber,
       "{{idType}}": client.idType,
     };
-    this.rules = formAnswers.rules.map((r) => ({ re: new RegExp(r.pattern, "i"), answer: r.answer }));
-    this.unique = (formAnswers.uniquePerForm || []).map((p) => new RegExp(p, "i"));
+    this.rules = formAnswers.rules.map((r) => ({
+      re: new RegExp(r.pattern, "i"),
+      answer: r.answer,
+    }));
+    this.unique = (formAnswers.uniquePerForm || []).map(
+      (p) => new RegExp(p, "i"),
+    );
   }
 
   resolve(value) {
-    return typeof value === "string" ? this.tokens[value] ?? value : value;
+    return typeof value === "string" ? (this.tokens[value] ?? value) : value;
   }
 
   // First rule whose pattern matches the title AND whose answer fits the question kind.
@@ -58,23 +64,37 @@ class FormAnswerRules {
   // { date, fromRule }: a prefilled date is kept only when no rule covers the question.
   dateFor(title) {
     const rule = this.ruleFor(title, "date");
-    return { date: resolveDateToken(rule ? rule.value : this.defaults.date, this.client), fromRule: !!rule };
+    return {
+      date: resolveDateToken(
+        rule ? rule.value : this.defaults.date,
+        this.client,
+      ),
+      fromRule: !!rule,
+    };
   }
 
   // { value, fromRule, kind }: kind is "number" only for a number rule (used for the log line).
   inputValue(title) {
     const rule = this.ruleFor(title, "input");
-    if (!rule) return { value: this.defaults.text, fromRule: false, kind: "text" };
-    return { value: String(rule.value), fromRule: true, kind: rule.key === "number" ? "number" : "text" };
+    if (!rule)
+      return { value: this.defaults.text, fromRule: false, kind: "text" };
+    return {
+      value: String(rule.value),
+      fromRule: true,
+      kind: rule.key === "number" ? "number" : "text",
+    };
   }
 
   // The option to pick from `options`. `used`: options already picked for this title in this form.
   dropdownChoice(title, options, { used = new Set(), popup = false } = {}) {
     const rule = this.ruleFor(title, "dropdown");
     if (rule && options.includes(rule.value)) return rule.value;
-    if (this.isUnique(title)) return options.find((o) => !used.has(o)) || options[0];
+    if (this.isUnique(title))
+      return options.find((o) => !used.has(o)) || options[0];
     if (options.length && options.every(isNumeric)) {
-      return options.includes(this.defaults.rating) ? this.defaults.rating : options[options.length - 1];
+      return options.includes(this.defaults.rating)
+        ? this.defaults.rating
+        : options[options.length - 1];
     }
     if (options.includes(this.defaults.bool)) return this.defaults.bool;
     // popup variant: Enter on the first option does not commit, so prefer the second option

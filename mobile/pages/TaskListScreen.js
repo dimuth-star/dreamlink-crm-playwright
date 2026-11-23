@@ -1,6 +1,10 @@
 // "My Tasks": group filter, horizontal status sections (Newly Assigned / To Do / In Progress / Completed),
 // and task cards labelled "TASK-n · <title>, Client Assessment · <group>".
-const { MOBILE, MOBILE_TIMEOUTS, MOBILE_TEXT } = require("../../common/mobileSelectors");
+const {
+  MOBILE,
+  MOBILE_TIMEOUTS,
+  MOBILE_TEXT,
+} = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 
 // Status sections are horizontal pages in lifecycle order (same order as MOBILE_TEXT.taskSections).
@@ -9,7 +13,12 @@ const { BasePage } = require("./BasePage");
 const SECTION = { newlyAssigned: 0, toDo: 1, inProgress: 2, completed: 3 };
 // Where to look for a task, most likely first: fresh tasks are always in Newly Assigned; tasks left
 // mid-way by an earlier run are found by following the lifecycle.
-const SEARCH_ORDER = [SECTION.newlyAssigned, SECTION.inProgress, SECTION.toDo, SECTION.completed];
+const SEARCH_ORDER = [
+  SECTION.newlyAssigned,
+  SECTION.inProgress,
+  SECTION.toDo,
+  SECTION.completed,
+];
 const MAX_SECTION_SWIPES = 8; // 5 pages: enough to cross the whole pager in either direction
 // Task detail -> form -> nested dialog is the deepest the app can be left; 6 backs always reach the list.
 const MAX_BACKS_TO_LIST = 6;
@@ -24,15 +33,24 @@ class TaskListScreen extends BasePage {
 
   // Back out of task detail / forms until the list is showing.
   async goToList() {
-    for (let i = 0; i < MAX_BACKS_TO_LIST && !(await this.exists(MOBILE.myTasksTitle)); i++) {
+    for (
+      let i = 0;
+      i < MAX_BACKS_TO_LIST && !(await this.exists(MOBILE.myTasksTitle));
+      i++
+    ) {
       await driver.back();
-      await this.firstToAppear([MOBILE.myTasksTitle, MOBILE.markCompletedBtn, MOBILE.surveyContainer]);
+      await this.firstToAppear([
+        MOBILE.myTasksTitle,
+        MOBILE.markCompletedBtn,
+        MOBILE.surveyContainer,
+      ]);
     }
     await this.first(MOBILE.myTasksTitle);
   }
 
   async sectionsStrip() {
-    for (const s of await $$(MOBILE.sectionsStrip)) if (await s.isDisplayed()) return s;
+    for (const s of await $$(MOBILE.sectionsStrip))
+      if (await s.isDisplayed()) return s;
     throw new Error("task sections strip not found");
   }
 
@@ -47,9 +65,16 @@ class TaskListScreen extends BasePage {
 
   async swipeSection(direction, from) {
     const strip = await this.sectionsStrip();
-    await driver.execute("mobile: scrollGesture", { elementId: strip.elementId, direction, percent: 1.0 });
+    await driver.execute("mobile: scrollGesture", {
+      elementId: strip.elementId,
+      direction,
+      percent: 1.0,
+    });
     // let the pager settle on the next page; goToSection reads the header again either way
-    await this.within(MOBILE_TIMEOUTS.short, async () => (await this.currentSection()) !== from);
+    await this.within(
+      MOBILE_TIMEOUTS.short,
+      async () => (await this.currentSection()) !== from,
+    );
   }
 
   // Swipe until the section's own header is on screen: the position is read, never counted.
@@ -57,9 +82,14 @@ class TaskListScreen extends BasePage {
     for (let i = 0; i < MAX_SECTION_SWIPES; i++) {
       const current = await this.currentSection();
       if (current === index) return;
-      await this.swipeSection(current !== null && current < index ? "right" : "left", current);
+      await this.swipeSection(
+        current !== null && current < index ? "right" : "left",
+        current,
+      );
     }
-    throw new Error(`could not reach the "${MOBILE_TEXT.taskSections[index]}" section`);
+    throw new Error(
+      `could not reach the "${MOBILE_TEXT.taskSections[index]}" section`,
+    );
   }
 
   // Returns false when the group is not offered yet (its tasks have not synced to the device).
@@ -76,7 +106,12 @@ class TaskListScreen extends BasePage {
       return true;
     }
     // close the dropdown and the sheet without applying anything
-    for (let i = 0; i < MAX_BACKS_TO_CLOSE_FILTER && (await this.exists(MOBILE.filterSheetTitle)); i++) {
+    for (
+      let i = 0;
+      i < MAX_BACKS_TO_CLOSE_FILTER &&
+      (await this.exists(MOBILE.filterSheetTitle));
+      i++
+    ) {
       await driver.back();
     }
     return false;
@@ -122,7 +157,11 @@ class TaskListScreen extends BasePage {
         this.lastScan = await this.groupTaskNumbers(group, count);
         return this.lastScan.size >= count;
       },
-      { timeout, interval, timeoutMsg: `${count} tasks for "${group}" did not sync to the app` },
+      {
+        timeout,
+        interval,
+        timeoutMsg: `${count} tasks for "${group}" did not sync to the app`,
+      },
     );
   }
 
@@ -132,15 +171,21 @@ class TaskListScreen extends BasePage {
     let found = false;
     // go straight to the section recorded by the initial scan, then fall back to the lifecycle order
     const known = this.taskSections.get(title);
-    const order = known === undefined ? SEARCH_ORDER : [known, ...SEARCH_ORDER.filter((i) => i !== known)];
+    const order =
+      known === undefined
+        ? SEARCH_ORDER
+        : [known, ...SEARCH_ORDER.filter((i) => i !== known)];
     for (const index of order) {
       await this.goToSection(index);
       if ((found = await this.exists(cardSel))) break;
     }
-    if (!found) throw new Error(`no card for "${title}" (${group}) in any section`);
+    if (!found)
+      throw new Error(`no card for "${title}" (${group}) in any section`);
     await this.tap(cardSel);
     await driver.waitUntil(
-      async () => !(await this.exists(MOBILE.myTasksTitle)) && (await this.exists(MOBILE.taskTitleText(title))),
+      async () =>
+        !(await this.exists(MOBILE.myTasksTitle)) &&
+        (await this.exists(MOBILE.taskTitleText(title))),
       {
         timeout: MOBILE_TIMEOUTS.default,
         interval: MOBILE_TIMEOUTS.poll,

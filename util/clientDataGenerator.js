@@ -34,7 +34,8 @@ function toZambianIntl(localNumber) {
 // Resolve a date token from the fixture: "dob", "daysAgo:30", "daysAhead:30", "monthsAhead:5", "today"
 function resolveDateToken(token, client) {
   if (token === "today") return new Date();
-  if (token === "dob") return dobForAge(client.dobAgeYears, client.dobExtraDays);
+  if (token === "dob")
+    return dobForAge(client.dobAgeYears, client.dobExtraDays);
   const [kind, n] = token.split(":");
   const num = Number(n);
   if (kind === "daysAgo") return daysAgo(num);

@@ -20,7 +20,12 @@ class NativeDatePicker extends BasePage {
     await header.click();
     const list = await this.first(MOBILE.datePickerYearList);
     // scroll the list itself towards the year: "up" for earlier years, "down" for later ones
-    for (let i = 0; i < MAX_YEAR_LIST_SWIPES && !(await this.exists(MOBILE.datePickerYear(year))); i++) {
+    for (
+      let i = 0;
+      i < MAX_YEAR_LIST_SWIPES &&
+      !(await this.exists(MOBILE.datePickerYear(year)));
+      i++
+    ) {
       const shown = await $$(MOBILE.datePickerYearItems);
       const firstShown = Number(await shown[0].getText());
       await driver.execute("mobile: scrollGesture", {
@@ -34,10 +39,16 @@ class NativeDatePicker extends BasePage {
 
   async selectMonthAndDay(date) {
     const label = this.dayLabel(date);
-    for (let i = 0; i < MAX_MONTH_STEPS && !(await this.exists(MOBILE.datePickerDay(label))); i++) {
+    for (
+      let i = 0;
+      i < MAX_MONTH_STEPS && !(await this.exists(MOBILE.datePickerDay(label)));
+      i++
+    ) {
       const shown = await this.first(MOBILE.datePickerShownDay);
       const shownDate = new Date(await shown.getAttribute("content-desc"));
-      await this.tap(shownDate > date ? MOBILE.datePickerPrev : MOBILE.datePickerNext);
+      await this.tap(
+        shownDate > date ? MOBILE.datePickerPrev : MOBILE.datePickerNext,
+      );
     }
     await this.tap(MOBILE.datePickerDay(label));
   }
@@ -47,7 +58,10 @@ class NativeDatePicker extends BasePage {
     await this.first(MOBILE.datePickerYearHeader);
     await this.selectYear(date.getFullYear());
     await this.selectMonthAndDay(date);
-    await this.tapUntilGone(MOBILE.datePickerConfirm, MOBILE.datePickerYearHeader);
+    await this.tapUntilGone(
+      MOBILE.datePickerConfirm,
+      MOBILE.datePickerYearHeader,
+    );
   }
 }
 

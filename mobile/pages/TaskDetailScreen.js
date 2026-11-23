@@ -36,16 +36,23 @@ class TaskDetailScreen extends BasePage {
     await this.scrollToText(MOBILE.detailBottomAnchorText);
     const rows = await $$(MOBILE.pendingFormRow);
     if (!rows.length) return null;
-    return { row: rows[0], name: (await rows[0].getAttribute("content-desc")).split(", ")[0] };
+    return {
+      row: rows[0],
+      name: (await rows[0].getAttribute("content-desc")).split(", ")[0],
+    };
   }
 
   async openForm(row) {
     await (await row.$(MOBILE.formRowViewBtn)).click();
-    if (await this.appearsWithin(MOBILE.surveyContainer, MOBILE_TIMEOUTS.formOpen)) return;
+    if (
+      await this.appearsWithin(MOBILE.surveyContainer, MOBILE_TIMEOUTS.formOpen)
+    )
+      return;
     // the row sat behind the action bar: scroll it clear and tap View again
     await this.scrollPage("down", 0.5);
     const again = await this.nextPendingForm();
-    if (!again) throw new Error("pending form row disappeared before it could be opened");
+    if (!again)
+      throw new Error("pending form row disappeared before it could be opened");
     await (await again.row.$(MOBILE.formRowViewBtn)).click();
     await this.first(MOBILE.surveyContainer, MOBILE_TIMEOUTS.form);
   }
@@ -56,8 +63,11 @@ class TaskDetailScreen extends BasePage {
       const pending = await this.nextPendingForm();
       if (!pending) return;
       await this.openForm(pending.row);
-      const outcome = prefilled ? await formScreen.completePrefilled() : await formScreen.fillAndComplete();
-      if (outcome !== "closed") throw new Error(`form "${pending.name}" not completed: ${outcome}`);
+      const outcome = prefilled
+        ? await formScreen.completePrefilled()
+        : await formScreen.fillAndComplete();
+      if (outcome !== "closed")
+        throw new Error(`form "${pending.name}" not completed: ${outcome}`);
       await this.waitForGone(MOBILE.surveyContainer, MOBILE_TIMEOUTS.form);
     }
     throw new Error("forms kept reappearing as pending");
@@ -66,7 +76,10 @@ class TaskDetailScreen extends BasePage {
   async markCompleted() {
     if (!(await this.exists(MOBILE.markCompletedBtn))) return; // already completed (re-run safe)
     await this.tap(MOBILE.markCompletedBtn);
-    const dialog = await this.waitForAny([MOBILE.cannotCompleteTitle, MOBILE.confirmCompleteText]);
+    const dialog = await this.waitForAny([
+      MOBILE.cannotCompleteTitle,
+      MOBILE.confirmCompleteText,
+    ]);
     if (dialog === MOBILE.cannotCompleteTitle) {
       await this.tap(MOBILE.cannotCompleteOkBtn);
       throw new Error("App refused completion: not all forms are completed");

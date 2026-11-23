@@ -38,7 +38,9 @@ describe("DreamLink FO App - Task completion", () => {
       await taskList.openTask(task.title, groupName);
       await taskDetail.scheduleToday();
       await taskDetail.markInProgress();
-      await taskDetail.completeAllForms(formScreen, { prefilled: !!task.prefilled });
+      await taskDetail.completeAllForms(formScreen, {
+        prefilled: !!task.prefilled,
+      });
       await taskDetail.markCompleted();
       await taskDetail.expectStatus(foData.assessment.completedStatus);
     });
