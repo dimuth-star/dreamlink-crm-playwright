@@ -32,8 +32,12 @@ Config lives in `playwright.config.js`:
 `env/<name>.env` and copies the keys into `process.env`. `baseURL` then comes from
 `process.env.BASE_URL`.
 
-- `env/qa.env` — the only working environment. `BASE_URL=https://zm-qa.dreamstartlabs.com`,
-  plus `TEST_USERNAME`, `TEST_PASSWORD`, `TEST_DISPLAY_NAME`.
+- `env/qa.env` — the default. `BASE_URL=https://zm-qa.dreamstartlabs.com`, plus `TEST_USERNAME`,
+  `TEST_PASSWORD`, `TEST_DISPLAY_NAME` and the Field Officer keys (§4a), including `FO_DISPLAY_NAME`.
+- `env/vfdev.env` — **VF Dev** (`BASE_URL=https://crm-zambia.dev.vfconnect.org`, SA `sa2.test@vfconnect.org`
+  shown as "sa2 test", FO `fo.test@vfconnect.org` shown as "fo test", dev app `com.dreamlink.agent.dev`
+  from `C:/crm_automation/apps/dreamlink-agent-dev.apk`, installed next to the QA app). Select it with
+  `TEST_ENV=vfdev`; Playwright and WebdriverIO both honour it. Its CRM runs v0.2.0-alpha builds.
 - `env/stag.env` — **placeholder only** (`BASE_URL=https://www.daraz.lk`). Do not target it
   until it points at a real staging tenant.
 - `env/` is git-ignored, so these files exist locally only. Never commit credentials and never
@@ -41,12 +45,32 @@ Config lives in `playwright.config.js`:
 - Credentials are read through `getCredentials()` from `util/helpers.js`, never from
   `data/users.json` (whose `valid` block is the literal string `"loaded_from_env"`).
 
+### Keeping tests portable between environments
+
+The same specs run on QA and VF Dev, whose data differs. Rules that keep it that way:
+
+- **Anything tied to a user of the environment lives in the env file.** The Field Officer tasks are assigned
+  to is the one who signs in to the app: `getFoAssignee()` returns `FO_USERNAME` (also the assignee search
+  term) and `FO_DISPLAY_NAME` (the name CRM shows), and fails clearly if either is missing.
+- **Fixtures hold only values that exist everywhere**, e.g. partner "World Vision". Where a value is the same
+  thing spelt differently ("FAST Loan" on QA, "Fast Loan" on VF Dev), match it ignoring case
+  (`BasePage.selectOptionByLabel(..., { ignoreCase: true })`) instead of keeping one value per environment.
+- **Otherwise read it from the app** (see *Search tests never pin a record*): TC-PR-02 takes the first criteria
+  set each Group Types row offers.
+- **Native `<select>`: use `BasePage.selectOptionByLabel`**. It fails in `TIMEOUTS.default` listing the labels
+  on offer; a bare `selectOption` with a missing label retries until the test timeout (15 min in the e2e config).
+- **Open the record you are checking by its name**, never "the first row": a list can re-render unfiltered
+  after the search (VF Dev returns to the Products list after a save).
+- **Scope lead task checks to their stage.** A lead's tasks are grouped by workflow stage and a lead can have
+  several (VF Dev: Loan Assessment + Client Assessment); `LeadDetailPage` scopes the FO task checks to the
+  Client Assessment group by the stage pill's text (its colour differs per stage).
+
 ## 2. Directory & File Structure
 
 ```
 common/constants.js        Every selector string + TIMEOUTS + DEFAULTS. Single source of truth.
 data/*.json                Test data fixtures, one file per domain.
-env/qa.env, env/stag.env   Per-environment BASE_URL and credentials (git-ignored).
+env/qa.env, env/vfdev.env, env/stag.env   Per-environment BASE_URL, credentials, FO app + user (git-ignored).
 pages/BasePage.js          Shared base class: goto, waits, popup dismissal, autocomplete helper.
 pages/<domain>/*.js        Page objects, grouped by domain folder.
 tests/specs/*.spec.js      The actual specs — one file per domain.
@@ -374,7 +398,7 @@ Sidebar label "Paper Groups" is the `DL Non DreamSave Group` doctype at `/desk/d
 - **Cleanup pattern:** lifecycle tests (`TC-PG-03..05`) run in `test.describe.serial` with a `Date.now()`-unique
   name prefix and an `afterAll` that opens a fresh context and deletes any group still matching the prefix.
 - Upload files are written to `testInfo.outputPath(...)` with 3 rows (enough to prove a multi-row import, and
-  fast to sync). Partner is `Calcey Technologies` (see `data/paperGroups.json`).
+  fast to sync). Partner is `World Vision` (see `data/paperGroups.json`; it exists on QA and VF Dev).
 - **Review import dialog does not always open by itself.** Wait for the banner's "Review import" button
   (processing done), give the dialog a short bounded window, then click the button if it did not appear
   (`PaperGroupImportReviewModal.expectOpen`). Otherwise the import is left pending and blocks later uploads.
@@ -396,7 +420,8 @@ Sidebar label "Paper Groups" is the `DL Non DreamSave Group` doctype at `/desk/d
 - **Assign Tasks (lead detail):** the Assign To field is a Link autocomplete. Select with the **keyboard**
   (ArrowDown + Enter) and **wait for the `validate_link_and_fetch` response before clicking Assign**; clicking
   early returns "No task in this stage can be moved to <user>" even for an eligible user. Then confirm in the
-  follow-up "Assign the following task(s)…" dialog. Result toast: "Tasks successfully assigned to FO Zambia.".
+  follow-up "Assign the following task(s)…" dialog. Result toast: "Tasks successfully assigned to <FO_DISPLAY_NAME>.".
+  The assignee is the env file's Field Officer (`getFoAssignee()`), never a name in a fixture.
 - **`LeadsPage.expectLoaded()` can fail after navigating from another desk page** (the title link has no `title`
   attribute); the paper-group tests skip it and rely on the search box instead. Do not "fix" `LeadsPage` unasked.
 - The lead task grid's `div.grid-row` includes the header row; count `span.dl-task-status-pill` instead.
@@ -408,18 +433,19 @@ Sidebar label "Paper Groups" is the `DL Non DreamSave Group` doctype at `/desk/d
 Run with `npm run test:e2e:fo` (three steps chained with `&&`):
 
 1. **TC-FO-01** (`@fo-setup`, Playwright, `playwright.e2e.config.js`): uploads `E2E FO <ts>-1` (10 members, cycle 3),
-   assesses it, checks DreamLink number + lead + 6 tasks, assigns them to fo.zambia, writes `e2e-run/runState.json`.
+   assesses it, checks DreamLink number + lead + 6 tasks, assigns them to the env's Field Officer (`FO_USERNAME`),
+   writes `e2e-run/runState.json`.
 2. **TC-FO-02.1–02.6** (WebdriverIO + Appium, `mobile/wdio.conf.js`), one test per task: on the device, waits for the 6
    tasks to sync, then per task (fixture order, **Complete Insurance Registration always last**): schedule today → in
    progress → forms → complete → Completed status checked on the detail screen.
-3. **TC-FO-03** (`@fo-verify`): polls the lead until the 6 task titles show Completed for FO Zambia.
+3. **TC-FO-03** (`@fo-verify`): polls the lead until the 6 task titles show Completed for the Field Officer.
 
 - E2E files are named `*.e2e.js` so the main config (`*.spec.js`) never runs them; `playwright.config.js` is untouched.
 - Each run leaves one locked group + lead + tasks on QA (assessed groups cannot be deleted). A run that dies before
   the assessment leaves an unlocked, deletable group instead.
 - **Prerequisites:** Android device connected, QA app `com.dreamlink.agent.qa` installed (signed in or not: the run
-  logs in if needed), **Chrome as the default browser** (see *Login* below), Appium 3 with UiAutomator2. `env/qa.env` needs `ANDROID_UDID`, `FO_APP_PACKAGE`, `FO_APP_ACTIVITY`, `FO_USERNAME`,
-  `FO_PASSWORD`, `FO_PIN` (`onPrepare` fails fast listing any that are missing). `FO_APP_PATH` is in the env file but
+  logs in if needed), **Chrome as the default browser** (see *Login* below), Appium 3 with UiAutomator2. `env/<TEST_ENV>.env` needs `ANDROID_UDID`, `FO_APP_PACKAGE`, `FO_APP_ACTIVITY`, `FO_USERNAME`,
+  `FO_PASSWORD`, `FO_PIN` (`onPrepare` fails fast listing any that are missing), plus `FO_DISPLAY_NAME` for the CRM steps. `FO_APP_PATH` is in the env file but
   nothing reads it: the app is not installed by the run. An Appium server already on port 4723 is reused; otherwise
   the wdio appium service starts one.
 - Mobile code: `mobile/pages/*Screen.js` (see §3 *Mobile conventions*), selectors in `common/mobileSelectors.js`,
@@ -479,7 +505,7 @@ only the happy-path spec, so `npm run test:e2e:fo` never runs this one). Data: `
 upload / assessment / assignment / task list from `data/foEndToEnd.json`.
 
 1. **TC-FO-04** (`@fu-setup`): one import with two groups (`E2E UTC <ts>-1`, `-2`), each assessed and its 6 tasks
-   assigned to fo.zambia; writes both group names and lead numbers.
+   assigned to the env's Field Officer; writes both group names and lead numbers.
 2. **TC-FO-05 / 06** (mobile): per group, pick one task at random (saved to the state file; a retry reuses it), schedule
    today, start, then **More actions** → `Mark Task as “Unable to Continue”` → reason (**Incorrect information** for
    group 1, **Group does not exist** for group 2) → `Yes, mark as “Unable to Continue”` → in-app toast "Task and 5
@@ -497,7 +523,7 @@ upload / assessment / assignment / task list from `data/foEndToEnd.json`.
   filter applies, the newest lead is listed first).
 - "More actions" (3 dots) only exists on a started task, and is gone once the task is marked, which is how a retry knows
   the step is done.
-- Each run leaves two locked groups and their leads on QA; the resumed lead's tasks go back to FO Zambia's task list.
+- Each run leaves two locked groups and their leads on QA; the resumed lead's tasks go back to the Field Officer's task list.
 - **Expected duration:** about 4–5 minutes (setup ~1.5 min, mobile ~1–2 min, verify ~1 min). A status poll that never
   matches waits `TIMEOUTS.sync` (10 min) before failing.
 
@@ -578,9 +604,11 @@ npm run test:search-keywords                         # pure search-keyword helpe
 # Switch environment (default is qa)
 TEST_ENV=qa npx playwright test --workers=1          # bash
 $env:TEST_ENV="qa"; npx playwright test --workers=1  # PowerShell
+TEST_ENV=vfdev npm test                              # VF Dev web suite
+TEST_ENV=vfdev npm run test:e2e:fo                   # VF Dev FO flow (dev app on the device)
 ```
 
-Only `qa` is usable today; see §1 on `env/stag.env`.
+`qa` and `vfdev` are usable; see §1 on `env/stag.env`.
 
 ### Allure reports
 
