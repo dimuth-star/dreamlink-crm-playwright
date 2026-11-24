@@ -1,6 +1,5 @@
 const { expect } = require("@playwright/test");
 const { SELECTORS, TIMEOUTS } = require("../../common/constants");
-const groupsData = require("../../data/groups.json");
 
 class GroupsSearchBar {
   constructor(page) {
@@ -9,6 +8,7 @@ class GroupsSearchBar {
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
     this.recordCount = page.locator(SELECTORS.recordCount);
     this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
+    this.groupListRow = page.locator(SELECTORS.deskListRow);
   }
 
   async searchByGroupName(keyword) {
@@ -23,10 +23,18 @@ class GroupsSearchBar {
     });
   }
 
+  // number of rows the search returned
   async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+    await expect(this.groupListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
+  }
+
+  async expectAllResultsContain(keyword) {
+    await expect(this.groupListRow.filter({ hasNotText: keyword })).toHaveCount(
+      0,
+      { timeout: TIMEOUTS.default },
+    );
   }
 
   async expectGroupVisible(groupName) {
@@ -37,16 +45,16 @@ class GroupsSearchBar {
   }
 
   async expectMultipleResults() {
-    const rows = this.page.locator(SELECTORS.deskListRow);
-    const count = await rows.count();
-    expect(count).toBeGreaterThan(1);
+    await expect(this.groupListRow.nth(1)).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
   }
 
-  async expectNoResults() {
+  async expectNoResults(expectedMessage) {
     await expect(this.noResultsMessage).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.noResultsMessage).toHaveText(groupsData.noResultsMessage);
+    await expect(this.noResultsMessage).toHaveText(expectedMessage);
   }
 }
 

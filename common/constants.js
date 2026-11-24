@@ -19,13 +19,28 @@ const SELECTORS = {
   // DreamSave Groups list page
   loggedInUser: "span.d-block.text-truncate:not(.text-secondary)",
   groupsPageTitle: 'a.title-text[title="DreamSave Groups"]',
-  recordCount: ".list-count span",
+  // list paginator range, e.g. "1–20 of 148" (replaced the old ".list-count" label in the new build)
+  recordCount: ".dl-pager-range span",
   groupNameLink: 'a.ellipsis[data-doctype="DL DreamSave Group"]',
   groupSearchInput: 'input[data-fieldname="group_name"]',
+  groupEligibilityScoreFilter:
+    '.standard-filter-section input[data-fieldname="dl_eligibility_score_filter"]',
+  groupRowCheckbox: 'input[type="checkbox"]',
+  // "Products and Eligibility" cell: one line per product, "<product><score badge><status badge>"
+  groupProductLine: ".dl-products-cell > div",
+  // the score badge has no title; the status badge carries its label as title (colour varies by status)
+  groupProductScoreBadge: "span.badge:not([title])",
+  groupProductStatusBadge: "span.badge[title]",
 
   // DreamSave Group detail page
   groupNameDetail:
     '[data-fieldname="group_name"] .control-value.like-disabled-input',
+  groupProductsTab: '[role="tab"][data-fieldname="products_tab"]',
+  groupProductCard: "article.dl-product-card",
+  groupProductCardName: ".dl-product-card__identity strong",
+  // failed rows of the product's "Current Eligibility" criteria (present while the panel is collapsed)
+  groupFailedCriterionName:
+    ".dl-current-eligibility .dl-criterion-row--danger .dl-criterion-copy strong",
 
   // Logout
   logoutMenuTrigger: "a.sidebar-header",
@@ -66,6 +81,10 @@ const SELECTORS = {
   criterionDescriptionInput: "Description *",
   saveCriterionBtn: "Save criterion",
   criterionSuccessToast: "div.alert.desk-alert.green .alert-message",
+  // criterion logic row (accessible names); the Value control is a number box or a True/False dropdown
+  criterionAttributeSelect: "Eligibility attribute",
+  criterionConditionSelect: "Condition",
+  criterionValueControl: "Value",
 
   // Eligibility Criteria Sets
   criteriaSetRow:
@@ -74,6 +93,11 @@ const SELECTORS = {
   createCriteriaSetBtn: 'button[data-label="Create Criteria Set"]',
   criteriaSetNameInput: "input#criteria-set-name",
   criteriaSetCheckbox: "input.dl-checkbox",
+  criteriaSetDescriptionInput: "input#criteria-set-description",
+  // "Available criteria" list: only criteria of the selected group type, each a label with checkbox + name
+  criteriaSetAvailableList: '[role="region"][aria-label="Available criteria"]',
+  criteriaSetAvailableItem: "label:has(input.dl-checkbox)",
+  criteriaSetItemName: "span.font-medium",
   saveCriteriaSetBtn: 'button:has-text("Save criteria set")',
   criteriaSetSuccessToast:
     "div.alert.desk-alert.green .alert-message-container",
@@ -81,25 +105,39 @@ const SELECTORS = {
   criteriaSetNoResultsMessage: "p.text-foreground.text-base",
 
   // Products list page
-  productsPageTitle: 'a.title-text[title="Product"]',
+  productsPageTitle: 'a.title-text[title="Products"]',
   productsNavLink: 'a.item-anchor[href="/desk/dl-product"]',
   productNameLink: 'a.ellipsis[data-doctype="DL Product"]',
-  productSearchField: '//input[@placeholder="Product Name"]',
+  productSearchInput:
+    '.standard-filter-section input[data-fieldname="product_name"]',
 
-  // Add Product page
-  addProductPageTitle: '//div[normalize-space()="Product Details"]',
-  productNameInput: '.control-input [data-fieldname="product_name"]',
-  productTypeSelect: 'div[data-fieldname="product_type"] .select2-selection',
-  productDescriptionInput: '//textarea[@type="text"]',
-  productRulesTitle: '//div[normalize-space()="Rules Settings"]',
-  productRulesDropdown: '//button[@title="FAST Credit Rule Set"]',
-  productEligibilityCriteriaTitle:
-    '//div[@class="section-head"][normalize-space()="Eligibility Criteria"]',
-  productGroupsTypesTitle: '//label[normalize-space()="Group Types"]',
-  productDSCriteriaSetSelect:
-    '//input[@placeholder="Eligibility Criteria Set"]',
-  productDSSelectedCriteria: '//p[@title="Dim Seven Test"]',
-  productSaveBtn: '[data-label="Save"] .alt-underline',
+  // Add Product page / Product detail (one Frappe control per data-fieldname)
+  productNameInput: '.form-layout input[data-fieldname="product_name"]:visible',
+  productCodeInput: '.form-layout input[data-fieldname="product_ds_code"]:visible',
+  // Product Type is fixed to "Loan" and shown as a read-only value
+  productTypeValue:
+    '.form-layout [data-fieldname="product_type"] .control-value:visible',
+  productDescriptionInput:
+    '.form-layout textarea[data-fieldname="description"]:visible',
+  productCreditRuleSetSelect:
+    '.form-layout select[data-fieldname="credit_rule_set"]:visible',
+  productAutoApprovalInput:
+    '.form-layout input[data-fieldname="auto_approval_threshold"]:visible',
+  // Group Types table: one fixed row per group type, each with an Eligibility Criteria Set link field
+  productGroupTypeRow:
+    '.form-layout [data-fieldname="group_types"] .grid-body .grid-row:visible',
+  productGroupTypeCell:
+    '.grid-static-col[data-fieldname="group_type"] .static-area',
+  productCriteriaSetCell:
+    '.grid-static-col[data-fieldname="eligibility_criteria_set"]',
+  productCriteriaSetValue:
+    '.grid-static-col[data-fieldname="eligibility_criteria_set"] .static-area',
+  productCriteriaSetInput: 'input[data-fieldname="eligibility_criteria_set"]',
+  productSaveBtn: 'button[data-label="Save"]:visible',
+  productStatusIndicator: ".page-head .indicator-pill:visible",
+  // a non-zero Auto-Approval Threshold asks for confirmation on Save
+  productConfirmDialog: ".modal.fade.show",
+  productConfirmDialogBtn: ".modal.fade.show button.btn-modal-primary",
 
   // Geofence List Page
   geofenceListPageTitle: '[data-slot="card-title"]',
@@ -146,6 +184,12 @@ const SELECTORS = {
     'button[aria-label="Configure product assignments"]',
 
   geofenceAssignedItemName: "div.truncate.text-sm.font-medium",
+  // list type filter "Branch" (exact: "Sub-branch" also contains the word)
+  geofenceBranchFilter: '[data-slot="button"]:text-is("Branch")',
+  // a geofence row that opens its detail panel (not the collapsible country header)
+  geofenceSelectableRow: "ul.space-y-0 li[aria-selected]",
+  // "No assigned users" / "No assigned products" in an empty assignment section
+  geofenceAssignedEmpty: "div.text-muted-foreground.py-2.text-sm",
   geofenceDetailBackBtn: 'button:has-text("Back")',
 
   // Classification — list-view actions
@@ -174,8 +218,9 @@ const SELECTORS = {
   fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
 
   // Leads list page
-  leadsPageTitle: 'a.title-text[title="Lead"]',
+  leadsPageTitle: 'a.title-text[title="Leads"]',
   leadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
+  leadSavingGroupCell: '.list-row-col[data-fieldname="dl_saving_group"] a',
   leadNameLink: 'a.ellipsis[data-doctype="DL Lead"]',
 
   // Lead detail page
@@ -210,7 +255,7 @@ const SELECTORS = {
     'span.badge.badge-secondary[title="Data Correction Required"]',
 
   // Pre Leads list page
-  preLeadsPageTitle: 'a.title-text[title="Pre Lead"]',
+  preLeadsPageTitle: 'a.title-text[title="Pre Leads"]',
   preLeadsNavLink: 'a.item-anchor[href="/desk/dl-pre-lead"]',
   preLeadSavingGroupSearchInput: 'input[data-fieldname="dl_saving_group"]',
   preLeadNameLink: 'a.ellipsis[data-doctype="DL Pre Lead"]',
@@ -232,7 +277,8 @@ const SELECTORS = {
   /// Forms list page
   formsPageTitle: "span.app-shell__breadcrumb-label--current",
   formsListRow: 'tr.forms-list-item[tabindex="0"]',
-  formsResultCount: "div.forms-list-page__results-count",
+  // list pager range, e.g. "1–20 of 62" ("0–0 of 0" when nothing matches)
+  formsResultCount: "div.list-pagination__results-count",
   formsSearchInput: "input#search",
   formsNoResultsMessage: "p.forms-list-page__empty-text",
   formsItemName: "span.forms-list-item__name",
@@ -254,7 +300,7 @@ const SELECTORS = {
   formPreviewSummaryValue: "span.form-preview-page__summary-value",
 
   // Tasks list page
-  tasksPageTitle: 'a.title-text[title="Task"]',
+  tasksPageTitle: 'a.title-text[title="Tasks"]',
   tasksNavLink: 'a.item-anchor[href="/desk/dl-task"]',
   taskNameLink: 'a.ellipsis[data-doctype="DL Task"]',
   taskNumberCell: "div.list-row-col .level-item a",
@@ -302,6 +348,9 @@ const SELECTORS = {
   // the whole Village field: an input box, or a read-only value once the group is locked (assessed)
   paperGroupVillageField:
     '.form-layout .frappe-control[data-fieldname="village"]:visible',
+  // the read-only Village value shown instead of the input while the group is locked (draft or assessed)
+  paperGroupVillageValue:
+    '.form-layout .frappe-control[data-fieldname="village"] .control-value:visible',
   paperGroupSaveBtn: 'button[data-label="Save"]:visible',
   paperGroupDeleteBtn: 'button[data-label="Delete"]:visible',
   paperGroupUnsavedIndicator: ".indicator-pill:visible",

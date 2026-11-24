@@ -4,6 +4,7 @@ const { UsersPage } = require("../../pages/users/UsersPage");
 const { UserDetailPage } = require("../../pages/users/UserDetailPage");
 const { UsersSearchBar } = require("../../pages/users/UsersSearchBar");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const usersData = require("../../data/users.json");
 
 test.describe("DreamLink CRM - Users", () => {
@@ -40,20 +41,22 @@ test.describe("DreamLink CRM - Users", () => {
     await userDetailPage.expectFullNameNotEmpty();
   });
 
-  test("TC-US-03 | Valid email search returns exactly one matching user", async ({
+  test("TC-US-03 | Searching a user email read from the list returns exactly that user", async ({
     page,
   }) => {
-    const { keyword, expectedCount } = usersData.validSearch;
+    const keyword = await usersPage.readFirstUserEmail();
     await usersSearchBar.searchByEmail(keyword);
-    await usersSearchBar.expectResultCount(expectedCount);
-    await usersSearchBar.expectExactRowCount(1);
+    await usersSearchBar.expectExactRowCount(
+      usersData.validSearch.expectedCount,
+    );
+    await usersSearchBar.expectAllResultsContain(keyword);
   });
 
   test("TC-US-04 | Invalid search keyword displays no results message", async ({
     page,
   }) => {
-    const { keyword } = usersData.invalidSearch;
+    const keyword = noMatchKeyword(usersData.invalidSearch.keywordPrefix);
     await usersSearchBar.searchByEmail(keyword);
-    await usersSearchBar.expectNoResults();
+    await usersSearchBar.expectNoResults(usersData.noResultsMessage);
   });
 });

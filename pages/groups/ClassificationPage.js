@@ -28,6 +28,20 @@ class ClassificationPage {
     await checkbox.check();
   }
 
+  // The row whose group name is exactly `groupName` (a search can list similar names too).
+  async selectGroupCheckbox(groupName) {
+    const checkbox = this.page
+      .locator(SELECTORS.deskListRow)
+      .filter({
+        has: this.page
+          .locator(SELECTORS.groupNameLink)
+          .and(this.page.getByText(groupName, { exact: true })),
+      })
+      .locator(SELECTORS.groupRowCheckbox);
+    await checkbox.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    await checkbox.check();
+  }
+
   async openActionsDropdown() {
     await this.actionsBtn.waitFor({
       state: "visible",
@@ -86,6 +100,23 @@ class ClassificationPage {
     await expect(this.fullyEligibleBadge).toBeVisible({
       timeout: TIMEOUTS.default,
     });
+  }
+
+  // Classification runs in the background: the product's line in the Products & Eligibility
+  // column changes to `status` once the group finishes.
+  async expectProductStatus(groupName, productName, status) {
+    const productLine = this.page
+      .locator(SELECTORS.deskListRow)
+      .filter({
+        has: this.page
+          .locator(SELECTORS.groupNameLink)
+          .and(this.page.getByText(groupName, { exact: true })),
+      })
+      .locator(SELECTORS.groupProductLine)
+      .filter({ hasText: productName });
+    await expect(
+      productLine.locator(SELECTORS.groupProductStatusBadge),
+    ).toHaveAttribute("title", status, { timeout: TIMEOUTS.backgroundJob });
   }
 
   async expectDataCorrectionBadgeVisible() {

@@ -1,23 +1,27 @@
 {
-  "validSearch": {
-    "keyword": "Mulonga Uuzwide",
-    "expectedName": "Mulonga Uuzwide",
-    "expectedCount": "1 of 1"
-  },
-  "multipleSearch": {
-    "keyword": "test"
-  },
   "invalidSearch": {
-    "keyword": "xyzinvalidgroupname123"
+    "keywordPrefix": "zz-no-match-"
   },
   "noResultsMessage": "No matching groups found.",
-  "classificationSearch": {
-    "keyword": "L2",
-    "expectedCount": "1 of 1"
+  "activeWorkflowSearch": {
+    "leadFilters": {
+      "status": "Active",
+      "source": "DreamSave: CRM Initiated"
+    }
+  },
+  "classificationCandidate": {
+    "criteriaCount": 7,
+    "notClassifiedLabel": "Not Classified",
+    "noWorkflowMessage": "No workflows have started for this product."
   },
   "fullyEligibleSearch": {
-    "keyword": "Tugwashane B Dare To Discover",
-    "expectedCount": "1 of 1",
-    "groupName": "Tugwashane B Dare To Discover"
+    "scores": [7],
+    "allowedFailedCriteria": [],
+    "expectedStatus": "Fully Eligible"
+  },
+  "dataCorrectionSearch": {
+    "scores": [6, 5],
+    "allowedFailedCriteria": ["Backup Status", "Members with Images"],
+    "expectedStatus": "Data Correction Required"
   }
 }

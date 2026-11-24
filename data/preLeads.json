@@ -1,15 +1,12 @@
 {
   "dataCorrectSearch": {
-    "keyword": "ZUMA SG",
-    "expectedCount": "1 of 1",
-    "groupName": "ZUMA SG"
+    "expectedCount": 1
   },
   "preLeadNumberSearch": {
-    "keyword": "PRE-00289",
-    "expectedCount": "1 of 1"
+    "expectedCount": 1
   },
   "invalidSearch": {
-    "keyword": "PRE-99999"
+    "keywordPrefix": "zz-no-match-"
   },
-  "noResultsMessage": "No Pre Lead found with matching filters. Clear filters to see all Pre Lead."
+  "noResultsMessage": "No Pre Leads found with matching filters. Clear filters to see all Pre Leads."
 }

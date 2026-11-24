@@ -1,6 +1,20 @@
 {
-  "newCriterion": {
+  "dreamSaveCriterion": {
     "baseName": "QA Test Criterion",
-    "description": "Automated test criterion created by Playwright"
+    "description": "Automated test criterion created by Playwright",
+    "groupType": "DreamSave",
+    "attribute": "Group Age",
+    "condition": "is greater than or equal to",
+    "value": "1",
+    "logicText": "Group Age is greater than or equal to 1"
+  },
+  "nonDreamSaveCriterion": {
+    "baseName": "QA Test NDS Criterion",
+    "description": "Automated Non-DreamSave test criterion created by Playwright",
+    "groupType": "Non-DreamSave",
+    "attribute": "Constitution Available",
+    "condition": "is",
+    "value": "True",
+    "logicText": "Constitution Available is True"
   }
 }

@@ -1,6 +1,7 @@
 const { expect } = require("@playwright/test");
 const { SELECTORS, TIMEOUTS } = require("../../common/constants");
 const { BasePage } = require("../BasePage");
+const { sharedWord } = require("../../util/searchKeywords");
 
 class GeofencePage extends BasePage {
   constructor(page) {
@@ -8,6 +9,8 @@ class GeofencePage extends BasePage {
     this.pageTitle = page.locator(SELECTORS.geofenceListPageTitle);
     this.geofenceNavLink = page.locator(SELECTORS.geofenceNavLink);
     this.geofenceListRow = page.locator(SELECTORS.geofenceListRow);
+    this.geofenceSelectableRow = page.locator(SELECTORS.geofenceSelectableRow);
+    this.geofenceBranchFilter = page.locator(SELECTORS.geofenceBranchFilter);
     this.geofenceHierarchySelect = page.locator(
       SELECTORS.geofenceHierarchySelect,
     );
@@ -99,6 +102,97 @@ class GeofencePage extends BasePage {
     await this.focusOnMapBtn.click();
   }
 
+  // Geofence names as listed (the country item also shows its geofence count on a second line).
+  async readGeofenceNames() {
+    await expect(
+      this.geofenceItemName.first(),
+      "Geofence list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const texts = await this.geofenceItemName.allInnerTexts();
+    return texts.map((text) => text.split("\n")[0].trim());
+  }
+
+  // The last listed geofence: the most specific level (FO area), never the country item at the top.
+  async readLastGeofenceName() {
+    const names = await this.readGeofenceNames();
+    return names[names.length - 1];
+  }
+
+  // A word shared by at least two listed geofence names, for a search expected to match several.
+  async readBroadKeyword() {
+    const keyword = sharedWord(await this.readGeofenceNames());
+    expect(
+      keyword,
+      "no word is shared by two listed geofence names",
+    ).not.toBeNull();
+    return keyword;
+  }
+
+  geofenceRow(name) {
+    return this.geofenceListRow.filter({
+      has: this.geofenceItemName.and(
+        this.page.getByText(name, { exact: true }),
+      ),
+    });
+  }
+
+  // Each result row has its own "Focus <name> on map" button.
+  async clickFocusOnMapFor(name) {
+    const focusBtn = this.geofenceRow(name).locator(
+      SELECTORS.geofenceFocusOnMapBtn,
+    );
+    await focusBtn.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    await focusBtn.click();
+  }
+
+  // Products can only be assigned to a Branch (users to any type), so only branches are
+  // checked. Opens each in turn and stops at the first with at least one assigned user
+  // and one assigned product. Returns its name.
+  async openFirstBranchWithAssignments() {
+    await this.showBranches();
+    const count = await this.geofenceSelectableRow.count();
+    for (let i = 0; i < count; i++) {
+      if (i > 0) {
+        await this.open();
+        await this.showBranches();
+      }
+      const item = this.geofenceSelectableRow
+        .nth(i)
+        .locator(SELECTORS.geofenceItemName);
+      const name = (await item.innerText()).trim();
+      await item.click();
+      const users = await this.countAssigned(this.configureUsersBtn);
+      const products = await this.countAssigned(this.configureProductsBtn);
+      if (users > 0 && products > 0) return name;
+    }
+    throw new Error(
+      "No branch geofence has both assigned users and assigned products",
+    );
+  }
+
+  async showBranches() {
+    await this.geofenceBranchFilter.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.geofenceBranchFilter.click();
+    await this.geofenceSelectableRow.first().waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  // Items in an "Assigned users/products" section, once it shows either items or its empty message.
+  async countAssigned(configureBtn) {
+    const section = configureBtn.locator("xpath=ancestor::section");
+    const items = section.locator(SELECTORS.geofenceAssignedItemName);
+    await items
+      .or(section.locator(SELECTORS.geofenceAssignedEmpty))
+      .first()
+      .waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    return items.count();
+  }
+
   async clickFirstGeofenceResult() {
     const firstItem = this.geofenceListRow.first();
     await firstItem.waitFor({ state: "visible", timeout: TIMEOUTS.default });
@@ -138,6 +232,20 @@ class GeofencePage extends BasePage {
 
   async expectInvalidSearchMessage() {
     await expect(this.geofenceInvalidMessage).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectGeofenceListed(name) {
+    await expect(this.geofenceRow(name)).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+  }
+
+  async expectEveryResultContains(keyword) {
+    await expect(
+      this.geofenceListRow.filter({ hasNotText: keyword }),
+    ).toHaveCount(0, {
       timeout: TIMEOUTS.default,
     });
   }

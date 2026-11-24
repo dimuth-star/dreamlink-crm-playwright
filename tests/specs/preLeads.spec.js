@@ -4,6 +4,7 @@ const { PreLeadsPage } = require("../../pages/preLeads/PreLeadsPage");
 const { PreLeadDetailPage } = require("../../pages/preLeads/PreLeadDetailPage");
 const { PreLeadsSearchBar } = require("../../pages/preLeads/PreLeadsSearchBar");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const preLeadsData = require("../../data/preLeads.json");
 
 test.describe("DreamLink CRM - Pre Leads", () => {
@@ -44,7 +45,8 @@ test.describe("DreamLink CRM - Pre Leads", () => {
   test("TC-PL-03 | Search by pre lead number returns exactly 1 result containing the searched keyword", async ({
     page,
   }) => {
-    const { keyword, expectedCount } = preLeadsData.preLeadNumberSearch;
+    const keyword = await preLeadsPage.readFirstPreLeadNumber();
+    const { expectedCount } = preLeadsData.preLeadNumberSearch;
     await preLeadsSearchBar.searchByPreLeadNumber(keyword);
     await preLeadsSearchBar.expectResultCount(expectedCount);
     await preLeadsSearchBar.expectPreLeadVisible(keyword);
@@ -53,7 +55,7 @@ test.describe("DreamLink CRM - Pre Leads", () => {
   test("TC-PL-04 | Search with an invalid pre lead number displays no results message", async ({
     page,
   }) => {
-    const { keyword } = preLeadsData.invalidSearch;
+    const keyword = noMatchKeyword(preLeadsData.invalidSearch.keywordPrefix);
     await preLeadsSearchBar.searchByPreLeadNumber(keyword);
     await preLeadsSearchBar.expectNoResults();
   });

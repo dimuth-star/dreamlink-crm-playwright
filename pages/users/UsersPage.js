@@ -40,6 +40,16 @@ class UsersPage extends BasePage {
     expect(count).toBeGreaterThan(0);
   }
 
+  // A user's email (their ID) to search for, read from the loaded list (no fixed record needed).
+  async readFirstUserEmail() {
+    const firstUser = this.userListRow.first().locator(SELECTORS.userNameLink);
+    await expect(
+      firstUser,
+      "Users list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return firstUser.getAttribute("data-name");
+  }
+
   async clickFirstUser() {
     await this.loadingIndicator.waitFor({
       state: "hidden",

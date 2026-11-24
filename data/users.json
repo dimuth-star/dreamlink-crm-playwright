@@ -9,10 +9,10 @@
     "password": "wrongpassword"
   },
   "validSearch": {
-    "keyword": "fo.zambia@dreamstartlabs.com",
-    "expectedCount": "1 of 1"
+    "expectedCount": 1
   },
   "invalidSearch": {
-    "keyword": "xyzinvaliduser123"
-  }
+    "keywordPrefix": "zz-no-match-"
+  },
+  "noResultsMessage": "No Users found with matching filters. Clear filters to see all Users."
 }

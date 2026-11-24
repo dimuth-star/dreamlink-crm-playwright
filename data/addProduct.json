@@ -1,7 +1,20 @@
 {
   "newProduct": {
-    "productName": "Dim Test Product",
-    "productDescription": "Automated test product created by Playwright",
-    "criteriaSetName": "DreamSave Eligibility Set"
-  }
+    "baseName": "QA Test Product",
+    "codePrefix": "QA",
+    "productType": "Loan",
+    "description": "Automated test product created by Playwright",
+    "creditRuleSet": "FAST Credit Rule Set",
+    "autoApprovalThreshold": "75",
+    "criteriaSets": {
+      "DreamSave": "DreamSave Eligibility Set",
+      "Non-DreamSave": "Non-DreamSave Eligibility Set"
+    }
+  },
+  "thresholdConfirmTitle": "Update Auto-Approval Threshold",
+  "unsavedIndicator": "Not Saved",
+  "invalidSearch": {
+    "keywordPrefix": "zz-no-match-"
+  },
+  "noResultsMessage": "No Products found with matching filters. Clear filters to see all Products."
 }

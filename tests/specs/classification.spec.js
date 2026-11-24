@@ -46,11 +46,21 @@ test.describe("DreamLink CRM - Run Classification", () => {
   test('TC-CL-01 | Running classification on a group with an active workflow shows "No Groups Classified" summary', async ({
     page,
   }) => {
-    const { keyword, expectedCount } = groupsData.classificationSearch;
+    // a group with an active DreamSave lead whose products all have a workflow already
+    await leadsPage.openFiltered(groupsData.activeWorkflowSearch.leadFilters);
+    const savingGroups = await leadsPage.readSavingGroups();
+    const groupName = await groupsPage.findGroupWithAllProductsInWorkflow(
+      savingGroups,
+      groupsData.classificationCandidate.noWorkflowMessage,
+    );
+    test.skip(
+      !groupName,
+      "No group with an active DreamSave lead has a workflow for every product",
+    );
 
-    await groupsSearchBar.searchByGroupName(keyword);
-    await groupsSearchBar.expectResultCount(expectedCount);
-    await classificationPage.selectFirstGroupCheckbox();
+    await groupsPage.open();
+    await groupsSearchBar.searchByGroupName(groupName);
+    await classificationPage.selectGroupCheckbox(groupName);
     await classificationPage.openActionsDropdown();
     await classificationPage.clickRunClassificationMenuItem();
     await classificationPage.confirmRunClassification();
@@ -59,24 +69,36 @@ test.describe("DreamLink CRM - Run Classification", () => {
     await classificationPage.expectModalDismissed();
   });
 
-  // PRE-CONDITION: Reset "Karoo Transport Collective 01D0F8E1-0240" to Not Classified before running
+  // The group is chosen at run time (a 7/7 product still "Not Classified"); skipped when QA has none.
+  // Classifying it creates a lead, so each run uses up one group.
   test(
     "TC-CL-02 | Running classification on a fully eligible group creates a lead with 6 assigned tasks",
     { retries: 0 },
     async ({ page }) => {
-      const { keyword, expectedCount, groupName } =
-        groupsData.fullyEligibleSearch;
+      const candidate = await groupsPage.findClassificationCandidate(
+        groupsData.fullyEligibleSearch,
+        groupsData.classificationCandidate,
+      );
+      test.skip(
+        !candidate,
+        "No DreamSave group on QA has a 7/7 product that is still Not Classified, with no workflow, lead or pre lead",
+      );
+      const { groupName } = candidate;
 
-      await groupsSearchBar.searchByGroupName(keyword);
-      await groupsSearchBar.expectResultCount(expectedCount);
-      await classificationPage.selectFirstGroupCheckbox();
+      await groupsPage.open();
+      await groupsSearchBar.searchByGroupName(groupName);
+      await classificationPage.selectGroupCheckbox(groupName);
       await classificationPage.openActionsDropdown();
       await classificationPage.clickRunClassificationMenuItem();
       await classificationPage.confirmRunClassification();
       await classificationPage.expectFullyEligibleSummaryPill();
       await classificationPage.closeSummaryModal();
       await classificationPage.expectModalDismissed();
-      await classificationPage.expectFullyEligibleBadgeVisible();
+      await classificationPage.expectProductStatus(
+        groupName,
+        candidate.productName,
+        groupsData.fullyEligibleSearch.expectedStatus,
+      );
 
       await leadsPage.open();
       await leadsPage.expectLoaded();
@@ -91,18 +113,27 @@ test.describe("DreamLink CRM - Run Classification", () => {
     },
   );
 
-  // PRE-CONDITION: Reset "Nile Supplies Group 0179E714-0189" to Not Classified before running
+  // The group is chosen at run time (a 5/7 or 6/7 product still "Not Classified" that fails only
+  // Backup Status / Members with Images); skipped when QA has none. Each run uses up one group.
   test(
     "TC-CL-03 | Running classification on a data correction group creates a pre lead with correct group information task assigned",
     { retries: 0 },
     async ({ page }) => {
-      const { keyword, expectedCount, groupName } =
-        preLeadsData.dataCorrectSearch;
+      const candidate = await groupsPage.findClassificationCandidate(
+        groupsData.dataCorrectionSearch,
+        groupsData.classificationCandidate,
+      );
+      test.skip(
+        !candidate,
+        "No DreamSave group on QA has a 5/7 or 6/7 product, still Not Classified, with no workflow, lead or pre lead, failing only the allowed criteria",
+      );
+      const { groupName } = candidate;
+      const { expectedCount } = preLeadsData.dataCorrectSearch;
 
       // Search and select the group
-      await groupsSearchBar.searchByGroupName(keyword);
-      await groupsSearchBar.expectResultCount(expectedCount);
-      await classificationPage.selectFirstGroupCheckbox();
+      await groupsPage.open();
+      await groupsSearchBar.searchByGroupName(groupName);
+      await classificationPage.selectGroupCheckbox(groupName);
 
       // Run classification — reusing existing methods
       await classificationPage.openActionsDropdown();
@@ -115,7 +146,11 @@ test.describe("DreamLink CRM - Run Classification", () => {
       await classificationPage.expectModalDismissed();
 
       // Assert Data Correction Required badge on groups list
-      await classificationPage.expectDataCorrectionBadgeVisible();
+      await classificationPage.expectProductStatus(
+        groupName,
+        candidate.productName,
+        groupsData.dataCorrectionSearch.expectedStatus,
+      );
 
       // Navigate to Pre Leads and search by saving group name
       await preLeadsPage.open();

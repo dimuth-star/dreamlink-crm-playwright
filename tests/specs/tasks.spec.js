@@ -46,7 +46,8 @@ test.describe("DreamLink CRM - Tasks", () => {
   test("TC-TK-03 | Search by task number returns exactly 1 result containing the searched keyword", async ({
     page,
   }) => {
-    const { keyword, expectedCount } = tasksData.taskNumberSearch;
+    const keyword = await tasksPage.readFirstTaskNumber();
+    const { expectedCount } = tasksData.taskNumberSearch;
     await tasksSearchBar.searchByTaskNumber(keyword);
     await tasksSearchBar.expectResultCount(expectedCount);
     await tasksSearchBar.expectTaskVisible(keyword);

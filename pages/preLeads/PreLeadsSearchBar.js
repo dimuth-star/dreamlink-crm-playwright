@@ -11,7 +11,7 @@ class PreLeadsSearchBar extends BasePage {
       SELECTORS.preLeadSavingGroupSearchInput,
     );
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
-    this.recordCount = page.locator(SELECTORS.recordCount);
+    this.preLeadListRow = page.locator(SELECTORS.deskListRow);
     this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
   }
 
@@ -35,8 +35,19 @@ class PreLeadsSearchBar extends BasePage {
     });
   }
 
+  // Rows listed for this saving group (0 when it has none).
+  async countBySavingGroup(groupName) {
+    await this.searchBySavingGroup(groupName);
+    // settled once no listed row belongs to another group (an empty result has no rows)
+    await expect(
+      this.preLeadListRow.filter({ hasNotText: groupName }),
+    ).toHaveCount(0, { timeout: TIMEOUTS.default });
+    return this.preLeadListRow.count();
+  }
+
+  // number of rows the search returned
   async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+    await expect(this.preLeadListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
   }

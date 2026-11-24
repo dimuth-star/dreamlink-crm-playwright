@@ -1,9 +1,6 @@
 {
-  "validSearch": {
-    "keyword": "Quality Sum",
-    "expectedRowCount": 1
-  },
   "invalidSearch": {
-    "keyword": "xyzinvalidcriteria123"
-  }
+    "keywordPrefix": "zz-no-match-"
+  },
+  "noResultsMessage": "No matching eligibility criteria."
 }

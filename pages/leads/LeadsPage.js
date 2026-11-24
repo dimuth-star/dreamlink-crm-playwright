@@ -22,6 +22,40 @@ class LeadsPage {
     await expect(this.pageTitle).toBeVisible({ timeout: TIMEOUTS.default });
   }
 
+  // The leads list narrowed by URL filters, e.g. { status: "Active" }.
+  async openFiltered(filters) {
+    const query = Object.entries(filters)
+      .map(([field, value]) => `${field}=${encodeURIComponent(value)}`)
+      .join("&");
+    await this.page.goto(`/desk/dl-lead?${query}`);
+    await this.page.waitForLoadState("domcontentloaded");
+  }
+
+  // The distinct saving groups of the listed leads.
+  async readSavingGroups() {
+    const savingGroups = this.leadListRow.locator(
+      SELECTORS.leadSavingGroupCell,
+    );
+    await expect(
+      savingGroups.first(),
+      "No lead matches the filters: no saving group to read",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const names = await savingGroups.allInnerTexts();
+    return [...new Set(names.map((name) => name.trim()))];
+  }
+
+  // A lead number to search for, read from the loaded list (no fixed record needed).
+  async readFirstLeadNumber() {
+    const firstNumber = this.leadListRow
+      .first()
+      .locator(SELECTORS.leadNameLink);
+    await expect(
+      firstNumber,
+      "Leads list is empty: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await firstNumber.innerText()).trim();
+  }
+
   async clickFirstLead() {
     await this.loadingIndicator.waitFor({
       state: "hidden",

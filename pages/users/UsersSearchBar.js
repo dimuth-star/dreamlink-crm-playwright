@@ -6,7 +6,6 @@ class UsersSearchBar {
     this.page = page;
     this.searchInput = page.locator(SELECTORS.userSearchInput);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
-    this.recordCount = page.locator(SELECTORS.recordCount);
     this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
     this.userListRow = page.locator(SELECTORS.deskListRow);
   }
@@ -23,24 +22,24 @@ class UsersSearchBar {
     });
   }
 
-  async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+  async expectExactRowCount(expectedCount) {
+    await expect(this.userListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
   }
 
-  async expectExactRowCount(expectedCount) {
-    const count = await this.userListRow.count();
-    expect(count).toBe(expectedCount);
+  async expectAllResultsContain(keyword) {
+    await expect(this.userListRow.filter({ hasNotText: keyword })).toHaveCount(
+      0,
+      { timeout: TIMEOUTS.default },
+    );
   }
 
-  async expectNoResults() {
+  async expectNoResults(expectedMessage) {
     await expect(this.noResultsMessage).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.noResultsMessage).toHaveText(
-      "No Users found with matching filters. Clear filters to see all Users.",
-    );
+    await expect(this.noResultsMessage).toHaveText(expectedMessage);
   }
 }
 

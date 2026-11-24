@@ -7,7 +7,7 @@ class TasksSearchBar extends BasePage {
     super(page);
     this.taskNumberInput = page.locator(SELECTORS.taskNumberSearchInput);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
-    this.recordCount = page.locator(SELECTORS.recordCount);
+    this.taskListRow = page.locator(SELECTORS.deskListRow);
   }
 
   async searchByTaskNumber(keyword) {
@@ -22,8 +22,9 @@ class TasksSearchBar extends BasePage {
     });
   }
 
+  // number of rows the search returned
   async expectResultCount(expectedCount) {
-    await expect(this.recordCount).toContainText(expectedCount, {
+    await expect(this.taskListRow).toHaveCount(expectedCount, {
       timeout: TIMEOUTS.default,
     });
   }
