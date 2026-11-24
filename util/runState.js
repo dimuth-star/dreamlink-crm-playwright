@@ -1,31 +1,55 @@
-// Hand-off between the three steps of the Field Officer end-to-end run
+// Hand-off between the three steps of a Field Officer end-to-end run
 // (Playwright setup -> WebdriverIO mobile -> Playwright verify).
 // Lives outside test-results/, which Playwright clears at the start of every run.
+// Each flow has its own file: the happy path (`npm run test:e2e:fo`) uses the default runState.json,
+// other flows pass their own file name (e.g. foUnableToContinue.json).
 const fs = require("fs");
 const path = require("path");
 
-const STATE_FILE = path.resolve(__dirname, "../e2e-run/runState.json");
+const RUN_DIR = path.resolve(__dirname, "../e2e-run");
+const DEFAULT_FILE = "runState.json";
 
-function writeRunState(state) {
-  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+function statePath(fileName = DEFAULT_FILE) {
+  return path.join(RUN_DIR, fileName);
+}
+
+function writeRunState(state, fileName) {
+  const file = statePath(fileName);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(
-    STATE_FILE,
+    file,
     JSON.stringify({ ...state, writtenAt: new Date().toISOString() }, null, 2),
   );
-  return STATE_FILE;
+  return file;
 }
 
-function readRunState() {
-  if (!fs.existsSync(STATE_FILE)) {
+function readRunState(fileName) {
+  const file = statePath(fileName);
+  if (!fs.existsSync(file)) {
     throw new Error(
-      `No run state at ${STATE_FILE}. Run the setup step (TC-FO-01, @fo-setup) first.`,
+      `No run state at ${file}. Run the setup step of this flow (@fo-setup / @fu-setup) first.`,
     );
   }
-  return JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"));
+  return JSON.parse(fs.readFileSync(file, "utf-8"));
 }
 
-function clearRunState() {
-  if (fs.existsSync(STATE_FILE)) fs.unlinkSync(STATE_FILE);
+// Shallow merge into the existing state (e.g. the mobile step adding what it chose).
+function updateRunState(patch, fileName) {
+  const file = statePath(fileName);
+  const current = fs.existsSync(file)
+    ? JSON.parse(fs.readFileSync(file, "utf-8"))
+    : {};
+  return writeRunState({ ...current, ...patch }, fileName);
 }
 
-module.exports = { writeRunState, readRunState, clearRunState };
+function clearRunState(fileName) {
+  const file = statePath(fileName);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+}
+
+module.exports = {
+  writeRunState,
+  readRunState,
+  updateRunState,
+  clearRunState,
+};
