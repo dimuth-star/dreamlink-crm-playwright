@@ -60,6 +60,17 @@ class ProductsPage extends BasePage {
     return productName.trim();
   }
 
+  // Opens the product with exactly this name. Clicking "the first row" is not enough: the list can
+  // re-render unfiltered after the search (seen on VF Dev, where saving a product returns to the list).
+  async openProduct(productName) {
+    const productLink = this.productListRow
+      .locator(SELECTORS.productNameLink)
+      .and(this.page.getByText(productName, { exact: true }));
+    await productLink.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+    await productLink.click();
+    await this.page.waitForLoadState("domcontentloaded");
+  }
+
   // A product name to search for, read from the loaded list (no fixed record needed).
   async readFirstProductName() {
     const firstName = this.productListRow

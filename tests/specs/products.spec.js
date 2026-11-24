@@ -51,7 +51,9 @@ test.describe("DreamLink CRM - Products", () => {
       await addProductPage.fillAutoApprovalThreshold(
         product.autoApprovalThreshold,
       );
-      await addProductPage.selectCriteriaSets(product.criteriaSets);
+      const criteriaSets = await addProductPage.selectFirstOfferedCriteriaSets(
+        product.groupTypes,
+      );
       await addProductPage.clickSaveProduct();
       await addProductPage.confirmAutoApprovalThreshold(
         addProductData.thresholdConfirmTitle,
@@ -65,14 +67,14 @@ test.describe("DreamLink CRM - Products", () => {
       await productsPage.expectProductListed(uniqueName);
 
       // and kept what was entered
-      await productsPage.clickFirstProduct();
+      await productsPage.openProduct(uniqueName);
       await productDetailPage.expectLoaded();
       await productDetailPage.expectProductName(uniqueName);
       await productDetailPage.expectProductCode(productCode);
       await productDetailPage.expectAutoApprovalThreshold(
         product.autoApprovalThreshold,
       );
-      await productDetailPage.expectCriteriaSets(product.criteriaSets);
+      await productDetailPage.expectCriteriaSets(criteriaSets);
     },
   );
 

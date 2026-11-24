@@ -266,6 +266,8 @@ const SELECTORS = {
   // Autocomplete dropdown
   autocompleteListbox: 'ul[role="listbox"]:not([hidden])',
   autocompleteDropdownOption: '[role="option"]',
+  // an option's record name (as opposed to "Create a new …" / "Advanced Search" entries)
+  autocompleteOptionTitle: "p[title]",
 
   // Groups list — data correction badge
   dataCorrectionalBadge:
