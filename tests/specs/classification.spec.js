@@ -69,12 +69,15 @@ test.describe("DreamLink CRM - Run Classification", () => {
     await classificationPage.expectModalDismissed();
   });
 
-  // The group is chosen at run time (a 7/7 product still "Not Classified"); skipped when QA has none.
-  // Classifying it creates a lead, so each run uses up one group.
-  test(
-    "TC-CL-02 | Running classification on a fully eligible group creates a lead with 6 assigned tasks",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    // The group is chosen at run time (a 7/7 product still "Not Classified"); skipped when QA has none.
+    // Classifying it creates a lead, so each run uses up one group.
+    test("TC-CL-02 | Running classification on a fully eligible group creates a lead with 6 assigned tasks", async ({
+      page,
+    }) => {
       test.skip(
         !classificationAllowed(),
         "Classification is turned off for this environment (CLASSIFY_GROUPS=false): it changes real groups",
@@ -114,15 +117,18 @@ test.describe("DreamLink CRM - Run Classification", () => {
       await leadDetailPage.expectLeadSavingGroup(groupName);
       await leadDetailPage.expectGeneratedDateIsToday();
       await leadDetailPage.expectSixTasksAllAssigned();
-    },
-  );
+    });
+  });
 
-  // The group is chosen at run time (a 5/7 or 6/7 product still "Not Classified" that fails only
-  // Backup Status / Members with Images); skipped when QA has none. Each run uses up one group.
-  test(
-    "TC-CL-03 | Running classification on a data correction group creates a pre lead with correct group information task assigned",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    // The group is chosen at run time (a 5/7 or 6/7 product still "Not Classified" that fails only
+    // Backup Status / Members with Images); skipped when QA has none. Each run uses up one group.
+    test("TC-CL-03 | Running classification on a data correction group creates a pre lead with correct group information task assigned", async ({
+      page,
+    }) => {
       test.skip(
         !classificationAllowed(),
         "Classification is turned off for this environment (CLASSIFY_GROUPS=false): it changes real groups",
@@ -179,6 +185,6 @@ test.describe("DreamLink CRM - Run Classification", () => {
       // Assert tasks section
       await preLeadDetailPage.expectClientIdentificationStage();
       await preLeadDetailPage.expectCorrectGroupInformationTaskAssigned();
-    },
-  );
+    });
+  });
 });

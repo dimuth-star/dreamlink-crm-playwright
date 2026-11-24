@@ -32,10 +32,13 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
     await eligibilityCriteriaPage.clickCriteriaSetsTab();
   });
 
-  test(
-    "TC-ECS-01 | New DreamSave criteria set can be created with 7 criteria and is listed with them",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-ECS-01 | New DreamSave criteria set can be created with 7 criteria and is listed with them", async ({
+      page,
+    }) => {
       const set = criteriaSetData.dreamSaveSet;
       const uniqueName = `${set.baseName}_${Date.now()}`;
 
@@ -58,8 +61,8 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
         set.groupType,
         criteriaNames,
       );
-    },
-  );
+    });
+  });
 
   test("TC-ECS-02 | Criteria Sets list is populated after navigating via tab", async ({
     page,
@@ -84,10 +87,13 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
     await criteriaSetsPage.expectNoResults(criteriaSetData.noResultsMessage);
   });
 
-  test(
-    "TC-ECS-05 | New Non-DreamSave criteria set can be created with 5 Non-DreamSave criteria and is listed with them",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-ECS-05 | New Non-DreamSave criteria set can be created with 5 Non-DreamSave criteria and is listed with them", async ({
+      page,
+    }) => {
       const set = criteriaSetData.nonDreamSaveSet;
       const uniqueName = `${set.baseName}_${Date.now()}`;
 
@@ -110,6 +116,6 @@ test.describe("DreamLink CRM - Eligibility Criteria Sets", () => {
         set.groupType,
         criteriaNames,
       );
-    },
-  );
+    });
+  });
 });

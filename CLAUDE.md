@@ -267,8 +267,19 @@ test.describe("DreamLink CRM - Tasks", () => {
   pageObject.expectSomething()` calls. Raw `expect()` in a spec is rare and reserved for trivial
   visibility checks (`login.spec.js`). Put new assertion logic in an `expect*` method.
 - No `page.locator(...)` in a spec, ever.
-- Tests that create data pass `{ retries: 0 }` as the second argument, so a retry cannot create a
-  duplicate record: `test("TC-FM-05 | ...", { retries: 0 }, async ({ page }) => { ... })`.
+- Tests that create data are **never retried**, so a retry cannot create a duplicate record. Playwright only
+  takes `tag` / `annotation` in a test's options object (`{ retries: 0 }` there is silently ignored), so put the
+  test in a block that configures it:
+
+  ```js
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-FM-05 | ...", async ({ page }) => { ... });
+  });
+  ```
+
+  A serial block whose every test creates data (Paper Groups lifecycle / assessment) configures itself; the e2e
+  config (`playwright.e2e.config.js`) already has `retries: 0`.
 - Multi-step flows get short `//` comments marking the phases (see `classification.spec.js`).
 - Manual pre-conditions are documented as a `// PRE-CONDITION: ...` comment immediately above
   the test. A test that needs a record in a given state finds it at run time and calls
@@ -661,7 +672,7 @@ Follow these when adding or changing test cases.
    the data fixture.
 8. **Follow the ID scheme.** Next free IDs continue the table in §2 (e.g. the next Leads case is
    `TC-LD-04`). Keep the `"TC-XX-NN | description"` title format.
-9. **Create tests get `{ retries: 0 }` and a `Date.now()`-unique name.** If a flow cannot clean up
+9. **Create tests are never retried (`test.describe.configure({ retries: 0 })`, see §3) and get a `Date.now()`-unique name.** If a flow cannot clean up
    after itself, say so in the handover rather than inventing a teardown.
 10. **Run serially.** Any command you run or document must pass `--workers=1`.
 11. **Verify before claiming.** Run the spec you added and report the real result. If it fails

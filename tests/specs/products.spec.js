@@ -33,10 +33,13 @@ test.describe("DreamLink CRM - Products", () => {
     await productsPage.expectProductListPopulated();
   });
 
-  test(
-    "TC-PR-02 | New product can be created with every field and both group-type criteria sets, and is searchable",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-PR-02 | New product can be created with every field and both group-type criteria sets, and is searchable", async ({
+      page,
+    }) => {
       const product = addProductData.newProduct;
       const uniqueName = `${product.baseName}_${Date.now()}`;
       const productCode = `${product.codePrefix}${Date.now()}`;
@@ -75,8 +78,8 @@ test.describe("DreamLink CRM - Products", () => {
         product.autoApprovalThreshold,
       );
       await productDetailPage.expectCriteriaSets(criteriaSets);
-    },
-  );
+    });
+  });
 
   test("TC-PR-03 | View the details of an existing Product and verify the displayed Product name verification", async ({
     page,

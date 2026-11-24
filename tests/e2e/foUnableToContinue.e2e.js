@@ -147,60 +147,58 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
   }
 
   // Leaves two locked groups, their leads and tasks on QA by design (assessed groups cannot be deleted).
-  test(
-    "TC-FO-04 | Two Verification Ready groups are assessed and each lead's 6 tasks are assigned to the Field Officer @fu-setup",
-    { retries: 0 },
-    async ({ page }, testInfo) => {
-      const upload = { ...foData.upload, ...utcData.upload };
-      clearRunState(utcData.stateFile);
-      const { names, rows } = buildPaperGroupRows({
-        baseName: upload.baseName,
-        stamp: Date.now(),
-        count: upload.groupCount,
-        defaults: upload,
-      });
-      const filePath = await writePaperGroupsFile(
-        testInfo.outputPath("foUnableToContinue.xlsx"),
-        paperGroupsData.template.headers,
-        rows,
-      );
+  test("TC-FO-04 | Two Verification Ready groups are assessed and each lead's 6 tasks are assigned to the Field Officer @fu-setup", async ({
+    page,
+  }, testInfo) => {
+    const upload = { ...foData.upload, ...utcData.upload };
+    clearRunState(utcData.stateFile);
+    const { names, rows } = buildPaperGroupRows({
+      baseName: upload.baseName,
+      stamp: Date.now(),
+      count: upload.groupCount,
+      defaults: upload,
+    });
+    const filePath = await writePaperGroupsFile(
+      testInfo.outputPath("foUnableToContinue.xlsx"),
+      paperGroupsData.template.headers,
+      rows,
+    );
 
-      // One import with both groups (10 members, cycle 3 => Verification Ready)
-      await paperGroupsPage.open();
-      await paperGroupsPage.expectLoaded();
-      await paperGroupsPage.clickUploadGroups();
-      await uploadModal.uploadFile(paperGroupsData.partner, filePath);
-      await reviewModal.expectOpen();
-      await reviewModal.expectSummary(
-        paperGroupsData.validUpload.reviewSummaryMessage,
-      );
-      await reviewModal.proceedWithImport();
-      await reviewModal.expectImportedToast(
-        upload.groupCount,
-        paperGroupsData.validUpload.importedMessageSuffix,
-      );
-      await paperGroupsPage.expectImportFinished();
+    // One import with both groups (10 members, cycle 3 => Verification Ready)
+    await paperGroupsPage.open();
+    await paperGroupsPage.expectLoaded();
+    await paperGroupsPage.clickUploadGroups();
+    await uploadModal.uploadFile(paperGroupsData.partner, filePath);
+    await reviewModal.expectOpen();
+    await reviewModal.expectSummary(
+      paperGroupsData.validUpload.reviewSummaryMessage,
+    );
+    await reviewModal.proceedWithImport();
+    await reviewModal.expectImportedToast(
+      upload.groupCount,
+      paperGroupsData.validUpload.importedMessageSuffix,
+    );
+    await paperGroupsPage.expectImportFinished();
 
-      // Scenario 1 (Incorrect information) gets the first group, Scenario 3 (Group does not exist) the second
-      const [incorrectGroup, notExistGroup] = names;
-      const incorrectLead = await assessAndAssign(incorrectGroup);
-      const notExistLead = await assessAndAssign(notExistGroup);
+    // Scenario 1 (Incorrect information) gets the first group, Scenario 3 (Group does not exist) the second
+    const [incorrectGroup, notExistGroup] = names;
+    const incorrectLead = await assessAndAssign(incorrectGroup);
+    const notExistLead = await assessAndAssign(notExistGroup);
 
-      writeRunState(
-        {
-          incorrectInformation: {
-            groupName: incorrectGroup,
-            leadNumber: incorrectLead,
-          },
-          groupDoesNotExist: {
-            groupName: notExistGroup,
-            leadNumber: notExistLead,
-          },
+    writeRunState(
+      {
+        incorrectInformation: {
+          groupName: incorrectGroup,
+          leadNumber: incorrectLead,
         },
-        utcData.stateFile,
-      );
-    },
-  );
+        groupDoesNotExist: {
+          groupName: notExistGroup,
+          leadNumber: notExistLead,
+        },
+      },
+      utcData.stateFile,
+    );
+  });
 
   test.describe.serial("Incorrect information, then Resume Workflow", () => {
     test("TC-FO-07 | Scenario 1: after one task is marked Unable to Continue (Incorrect information), all 6 tasks of the lead show Unable to Continue @fu-verify", async () => {
