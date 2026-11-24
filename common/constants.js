@@ -251,7 +251,8 @@ const SELECTORS = {
 
   // Lead detail — tasks section
   leadTasksGroupHead: "div.dl-tasks-group-head",
-  leadTasksStagePill: "div.dl-tasks-group-head span.indicator-pill.cyan",
+  // the stage pill's colour differs per stage (cyan Client Assessment, orange Loan Assessment): match by text
+  leadTasksStagePill: "div.dl-tasks-group-head span.indicator-pill",
   leadTasksCountLabel: "div.dl-tasks-group-head span.text-muted.small",
   leadCurrentWorkflowStage:
     '[data-fieldname="current_workflow_stage"] .control-value.like-disabled-input',
@@ -413,7 +414,11 @@ const SELECTORS = {
     '.form-layout [data-fieldname="dreamlink_number"]:visible',
 
   // Lead detail — tasks section (assessment / assignment)
-  leadTaskRows: "div.dl-tasks-group div.grid-row",
+  // Lead detail tasks are grouped by workflow stage, one div.dl-tasks-group each (a lead can have several)
+  leadTasksGroup: "div.dl-tasks-group",
+  leadAssessmentStage: "Client Assessment",
+  // a group's task rows (the heading row sits outside .grid-body)
+  leadTaskRows: "div.grid-body div.grid-row",
   leadTaskStatusPills: "span.dl-task-status-pill",
   leadAssignTasksBtn: 'button[data-action="assign-tasks"]',
   leadTaskTitleCell: ".dl-task-col-title",
