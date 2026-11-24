@@ -231,8 +231,9 @@ const SELECTORS = {
 
   // Classification Summary modal — fully eligible (green)
   classificationSummaryPillGreen: ".modal.fade.show span.indicator-pill.green",
+  // pattern: the product count is the selected group's eligible products (VF Dev: "across 2 products")
   classificationSummaryTextGreen:
-    "Classification triggered for 1 group across 1 product",
+    "^Classification triggered for 1 group across \\d+ products?$",
 
   // Groups list — fully eligible badge
   fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
