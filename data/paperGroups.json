@@ -60,5 +60,10 @@
   "deleteGroup": {
     "successMessageSuffix": "deleted successfully."
   },
-  "noResultsMessage": "No Paper Groups found with matching filters. Clear filters to see all Paper Groups."
+  "noResultsMessage": "No Paper Groups found with matching filters. Clear filters to see all Paper Groups.",
+  "invalidSearch": {
+    "keywordPrefix": "zz-no-match-",
+    "textFilters": ["groupName", "region", "village", "district"]
+  },
+  "duplicateLabel": "Duplicate"
 }
