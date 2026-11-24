@@ -27,8 +27,12 @@ class PreLeadsSearchBar extends BasePage {
     });
   }
 
+  // The full group name is the search term: a last word such as "Sg" matches too many groups to
+  // bring the one wanted into the dropdown (seen on VF Dev).
   async searchBySavingGroup(groupName) {
-    await this.searchByAutocomplete(this.savingGroupInput, groupName);
+    await this.searchByAutocomplete(this.savingGroupInput, groupName, {
+      searchTerm: groupName,
+    });
     await this.loadingIndicator.waitFor({
       state: "hidden",
       timeout: TIMEOUTS.default,
