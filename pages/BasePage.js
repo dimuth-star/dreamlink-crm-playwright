@@ -29,6 +29,31 @@ class BasePage {
     }
   }
 
+  // Selects the <option> of a native <select> by its label. Fails within TIMEOUTS.default, listing the
+  // labels on offer, instead of retrying until the test timeout (selectOption's own behaviour when the
+  // label is missing). `ignoreCase` is for labels whose capitalisation differs between environments.
+  async selectOptionByLabel(selectLocator, label, { ignoreCase = false } = {}) {
+    const wanted = ignoreCase ? label.toLowerCase() : label;
+    let match;
+    await expect
+      .poll(
+        async () => {
+          const labels = (
+            await selectLocator.locator("option").allInnerTexts()
+          ).map((text) => text.trim());
+          match = labels.find(
+            (text) => (ignoreCase ? text.toLowerCase() : text) === wanted,
+          );
+          return match
+            ? "offered"
+            : `"${label}" not offered; options: ${labels.join(" | ")}`;
+        },
+        { timeout: TIMEOUTS.default },
+      )
+      .toBe("offered");
+    await selectLocator.selectOption({ label: match });
+  }
+
   async expectVisible(locator, options = {}) {
     await expect(locator).toBeVisible({
       timeout: TIMEOUTS.default,

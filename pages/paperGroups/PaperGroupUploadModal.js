@@ -17,7 +17,7 @@ class PaperGroupUploadModal extends BasePage {
       state: "attached",
       timeout: TIMEOUTS.default,
     });
-    await this.partnerSelect.selectOption({ label: partnerName });
+    await this.selectOptionByLabel(this.partnerSelect, partnerName);
   }
 
   // filePath is relative to the repository root, e.g. "data/uploads/x.xlsx"
