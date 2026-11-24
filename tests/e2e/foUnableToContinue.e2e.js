@@ -1,5 +1,5 @@
 // Field Officer "Unable to Continue" end-to-end flow, CRM side. Run through `npm run test:e2e:fo:utc`:
-//   1. TC-FO-04 (@fu-setup)        — this file: two groups assessed, each lead's 6 tasks assigned to fo.zambia
+//   1. TC-FO-04 (@fu-setup)        — this file: two groups assessed, each lead's 6 tasks assigned to the Field Officer
 //   2. TC-FO-05 / TC-FO-06         — mobile/specs/foUnableToContinue.e2e.js (WebdriverIO)
 //   3. TC-FO-07..09 (@fu-verify)   — this file: CRM shows the outcome of each reason
 // Scenario 1 = "Incorrect information" (TC-FO-05, TC-FO-07), Scenario 2 = Resume Workflow on that lead
@@ -27,7 +27,7 @@ const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
 const {
   ResumeWorkflowModal,
 } = require("../../pages/leads/ResumeWorkflowModal");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, getFoAssignee } = require("../../util/helpers");
 const {
   buildPaperGroupRows,
   writePaperGroupsFile,
@@ -76,9 +76,10 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
     await loginPage.login(userData.username, userData.password);
   });
 
-  // Assess one imported group, check its lead and assign the 6 tasks to fo.zambia. Returns the lead number.
+  // Assess one imported group, check its lead and assign the 6 tasks to the Field Officer. Returns the lead number.
   async function assessAndAssign(groupName) {
     const { assessment, assignment } = foData;
+    const fieldOfficer = getFoAssignee();
     await paperGroupsPage.open();
     await paperGroupsPage.expectLoaded();
     await paperGroupsPage.searchByGroupName(groupName);
@@ -99,7 +100,7 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
     await groupDetailPage.expectDreamLinkNumber(assessment.dreamLinkPattern);
     await groupDetailPage.expectLocked(assessment.lockedMessage);
 
-    // Lead with 6 unassigned tasks -> all assigned to fo.zambia
+    // Lead with 6 unassigned tasks -> all assigned to the Field Officer who signs in to the app
     await leadsPage.open();
     await leadsSearchBar.searchBySavingGroup(groupName);
     await leadsPage.expectLeadRowVisible();
@@ -114,11 +115,14 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
     const leadNumber = await leadDetailPage.readLeadNumber();
     await leadDetailPage.clickAssignTasks();
     await assignTasksModal.expectOpen();
-    await assignTasksModal.selectUser(assignment.searchTerm);
+    await assignTasksModal.selectUser(fieldOfficer.username);
     await assignTasksModal.clickAssign();
-    await assignTasksModal.expectConfirmationFor(assignment.userName);
+    await assignTasksModal.expectConfirmationFor(fieldOfficer.displayName);
     await assignTasksModal.confirm();
-    await assignTasksModal.expectAssignedToast(assignment.successMessage);
+    await assignTasksModal.expectAssignedToast(
+      assignment.successMessagePrefix,
+      fieldOfficer.displayName,
+    );
     await leadDetailPage.reload();
     await leadDetailPage.expectAllTasksStatus(
       assessment.taskCount,
@@ -126,7 +130,7 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
     );
     await leadDetailPage.expectAllTasksAssignedTo(
       assessment.taskCount,
-      assignment.userName,
+      fieldOfficer.displayName,
     );
     return leadNumber;
   }
@@ -143,60 +147,58 @@ test.describe("DreamLink CRM - Field Officer Unable to Continue", () => {
   }
 
   // Leaves two locked groups, their leads and tasks on QA by design (assessed groups cannot be deleted).
-  test(
-    "TC-FO-04 | Two Verification Ready groups are assessed and each lead's 6 tasks are assigned to fo.zambia @fu-setup",
-    { retries: 0 },
-    async ({ page }, testInfo) => {
-      const upload = { ...foData.upload, ...utcData.upload };
-      clearRunState(utcData.stateFile);
-      const { names, rows } = buildPaperGroupRows({
-        baseName: upload.baseName,
-        stamp: Date.now(),
-        count: upload.groupCount,
-        defaults: upload,
-      });
-      const filePath = await writePaperGroupsFile(
-        testInfo.outputPath("foUnableToContinue.xlsx"),
-        paperGroupsData.template.headers,
-        rows,
-      );
+  test("TC-FO-04 | Two Verification Ready groups are assessed and each lead's 6 tasks are assigned to the Field Officer @fu-setup", async ({
+    page,
+  }, testInfo) => {
+    const upload = { ...foData.upload, ...utcData.upload };
+    clearRunState(utcData.stateFile);
+    const { names, rows } = buildPaperGroupRows({
+      baseName: upload.baseName,
+      stamp: Date.now(),
+      count: upload.groupCount,
+      defaults: upload,
+    });
+    const filePath = await writePaperGroupsFile(
+      testInfo.outputPath("foUnableToContinue.xlsx"),
+      paperGroupsData.template.headers,
+      rows,
+    );
 
-      // One import with both groups (10 members, cycle 3 => Verification Ready)
-      await paperGroupsPage.open();
-      await paperGroupsPage.expectLoaded();
-      await paperGroupsPage.clickUploadGroups();
-      await uploadModal.uploadFile(paperGroupsData.partner, filePath);
-      await reviewModal.expectOpen();
-      await reviewModal.expectSummary(
-        paperGroupsData.validUpload.reviewSummaryMessage,
-      );
-      await reviewModal.proceedWithImport();
-      await reviewModal.expectImportedToast(
-        upload.groupCount,
-        paperGroupsData.validUpload.importedMessageSuffix,
-      );
-      await paperGroupsPage.expectImportFinished();
+    // One import with both groups (10 members, cycle 3 => Verification Ready)
+    await paperGroupsPage.open();
+    await paperGroupsPage.expectLoaded();
+    await paperGroupsPage.clickUploadGroups();
+    await uploadModal.uploadFile(paperGroupsData.partner, filePath);
+    await reviewModal.expectOpen();
+    await reviewModal.expectSummary(
+      paperGroupsData.validUpload.reviewSummaryMessage,
+    );
+    await reviewModal.proceedWithImport();
+    await reviewModal.expectImportedToast(
+      upload.groupCount,
+      paperGroupsData.validUpload.importedMessageSuffix,
+    );
+    await paperGroupsPage.expectImportFinished();
 
-      // Scenario 1 (Incorrect information) gets the first group, Scenario 3 (Group does not exist) the second
-      const [incorrectGroup, notExistGroup] = names;
-      const incorrectLead = await assessAndAssign(incorrectGroup);
-      const notExistLead = await assessAndAssign(notExistGroup);
+    // Scenario 1 (Incorrect information) gets the first group, Scenario 3 (Group does not exist) the second
+    const [incorrectGroup, notExistGroup] = names;
+    const incorrectLead = await assessAndAssign(incorrectGroup);
+    const notExistLead = await assessAndAssign(notExistGroup);
 
-      writeRunState(
-        {
-          incorrectInformation: {
-            groupName: incorrectGroup,
-            leadNumber: incorrectLead,
-          },
-          groupDoesNotExist: {
-            groupName: notExistGroup,
-            leadNumber: notExistLead,
-          },
+    writeRunState(
+      {
+        incorrectInformation: {
+          groupName: incorrectGroup,
+          leadNumber: incorrectLead,
         },
-        utcData.stateFile,
-      );
-    },
-  );
+        groupDoesNotExist: {
+          groupName: notExistGroup,
+          leadNumber: notExistLead,
+        },
+      },
+      utcData.stateFile,
+    );
+  });
 
   test.describe.serial("Incorrect information, then Resume Workflow", () => {
     test("TC-FO-07 | Scenario 1: after one task is marked Unable to Continue (Incorrect information), all 6 tasks of the lead show Unable to Continue @fu-verify", async () => {

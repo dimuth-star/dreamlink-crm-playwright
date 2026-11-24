@@ -85,8 +85,10 @@ class ClassificationPage {
     await expect(this.summaryPillGreen).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.summaryPillGreen).toContainText(
-      SELECTORS.classificationSummaryTextGreen,
+    // one group, across however many of its products are eligible ("1 product", "2 products", ...)
+    await expect(this.summaryPillGreen).toHaveText(
+      new RegExp(SELECTORS.classificationSummaryTextGreen),
+      { timeout: TIMEOUTS.default },
     );
   }
 

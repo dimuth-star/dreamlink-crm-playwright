@@ -52,6 +52,25 @@ function getFoCredentials() {
   };
 }
 
+// The Field Officer tasks are assigned to in CRM: the user who signs in to the app (FO_USERNAME,
+// also the assignee search term) and the name CRM shows for them (FO_DISPLAY_NAME).
+function getFoAssignee() {
+  const username = process.env.FO_USERNAME;
+  const displayName = process.env.FO_DISPLAY_NAME;
+  if (!username || !displayName) {
+    throw new Error(
+      `FO_USERNAME and FO_DISPLAY_NAME must be set in env/${process.env.TEST_ENV || "qa"}.env`,
+    );
+  }
+  return { username, displayName };
+}
+
+// TC-CL-02/03 classify a real DreamSave group, which creates a lead / pre lead and cannot be undone.
+// An environment whose groups must not be changed sets CLASSIFY_GROUPS=false in its env file.
+function classificationAllowed() {
+  return process.env.CLASSIFY_GROUPS !== "false";
+}
+
 function missingFoEnv() {
   return FO_REQUIRED_ENV.filter((key) => !process.env[key]);
 }
@@ -61,5 +80,7 @@ module.exports = {
   getCredentials,
   getFoApp,
   getFoCredentials,
+  getFoAssignee,
+  classificationAllowed,
   missingFoEnv,
 };

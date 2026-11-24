@@ -55,10 +55,13 @@ test.describe("DreamLink CRM - Forms", () => {
     await formsPage.expectNoResultsMessage(formsData.noResultsMessage);
   });
 
-  test(
-    "TC-FM-05 | Successfully creating and publishing a form lists it in the forms list",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-FM-05 | Successfully creating and publishing a form lists it in the forms list", async ({
+      page,
+    }) => {
       const formCreatePage = new FormCreatePage(page);
       const uniqueName = `${formsData.createForm.baseName} ${Math.floor(Math.random() * 10000)}`;
 
@@ -84,6 +87,6 @@ test.describe("DreamLink CRM - Forms", () => {
       await formsPage.searchByKeyword(uniqueName);
       await formsPage.expectExactResultCount(1);
       await formsPage.expectResultContainsKeyword(uniqueName);
-    },
-  );
+    });
+  });
 });

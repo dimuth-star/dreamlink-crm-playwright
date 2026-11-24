@@ -11,12 +11,31 @@ class LeadDetailPage {
       SELECTORS.leadCurrentWorkflowStage,
     );
     this.tasksGroupHead = page.locator(SELECTORS.leadTasksGroupHead);
-    this.tasksStagePill = page.locator(SELECTORS.leadTasksStagePill);
-    this.tasksCountLabel = page.locator(SELECTORS.leadTasksCountLabel);
-    this.leadTaskStatusPills = page.locator(SELECTORS.leadTaskStatusPill);
-    this.taskRows = page.locator(SELECTORS.leadTaskRows);
-    this.taskStatusPills = page.locator(SELECTORS.leadTaskStatusPills);
-    this.assignTasksBtn = page.locator(SELECTORS.leadAssignTasksBtn);
+    // Tasks are grouped by workflow stage and a lead can have several (e.g. Loan Assessment + Client
+    // Assessment). The Field Officer assessment tasks are the Client Assessment group: everything about
+    // "the lead's tasks" below is scoped to it, so tasks of other stages are never counted.
+    this.taskGroups = page.locator(SELECTORS.leadTasksGroup);
+    this.assessmentTasks = this.taskGroups.filter({
+      has: page.locator(SELECTORS.leadTasksStagePill, {
+        hasText: SELECTORS.leadAssessmentStage,
+      }),
+    });
+    this.tasksStagePill = this.assessmentTasks.locator(
+      SELECTORS.leadTasksStagePill,
+    );
+    this.tasksCountLabel = this.assessmentTasks.locator(
+      SELECTORS.leadTasksCountLabel,
+    );
+    this.leadTaskStatusPills = this.assessmentTasks.locator(
+      SELECTORS.leadTaskStatusPill,
+    );
+    this.taskRows = this.assessmentTasks.locator(SELECTORS.leadTaskRows);
+    this.taskStatusPills = this.assessmentTasks.locator(
+      SELECTORS.leadTaskStatusPills,
+    );
+    this.assignTasksBtn = this.assessmentTasks.locator(
+      SELECTORS.leadAssignTasksBtn,
+    );
     this.resumeWorkflowBtn = page.locator(SELECTORS.leadResumeWorkflowBtn);
   }
 
@@ -104,15 +123,24 @@ class LeadDetailPage {
     expect(value.trim()).not.toBe("");
   }
 
+  // Any lead (any stages): every stage group shows its stage, a task count and at least one task.
   async expectTasksListNotEmpty() {
-    await expect(this.tasksStagePill).toBeVisible({
+    await expect(this.taskGroups.first()).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.tasksCountLabel).toBeVisible({
-      timeout: TIMEOUTS.default,
-    });
-    const countText = await this.tasksCountLabel.innerText();
-    expect(countText.trim()).not.toBe("");
+    for (const group of await this.taskGroups.all()) {
+      await expect(group.locator(SELECTORS.leadTasksStagePill)).toHaveText(
+        /\S/,
+        { timeout: TIMEOUTS.default },
+      );
+      await expect(group.locator(SELECTORS.leadTasksCountLabel)).toHaveText(
+        /\S/,
+        { timeout: TIMEOUTS.default },
+      );
+      await expect(group.locator(SELECTORS.leadTaskRows).first()).toBeVisible({
+        timeout: TIMEOUTS.default,
+      });
+    }
   }
 
   async expectGeneratedDateIsToday() {
@@ -131,7 +159,9 @@ class LeadDetailPage {
     await expect(this.tasksStagePill).toBeVisible({
       timeout: TIMEOUTS.default,
     });
-    await expect(this.tasksStagePill).toContainText("Client Assessment");
+    await expect(this.tasksStagePill).toContainText(
+      SELECTORS.leadAssessmentStage,
+    );
     await expect(this.tasksCountLabel).toContainText("6 tasks");
     const pills = this.leadTaskStatusPills;
     await expect(pills).toHaveCount(6, { timeout: TIMEOUTS.default });
@@ -160,7 +190,9 @@ class LeadDetailPage {
             });
             shown[title] =
               (await row.count()) === 1
-                ? (await row.locator(this.taskStatusPills).innerText()).trim()
+                ? (
+                    await row.locator(SELECTORS.leadTaskStatusPills).innerText()
+                  ).trim()
                 : `${await row.count()} rows`;
           }
           return shown;

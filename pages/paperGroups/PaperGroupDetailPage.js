@@ -95,15 +95,21 @@ class PaperGroupDetailPage extends BasePage {
   // The saved value, whether Village is still an input or shown read-only:
   // after a reload a freshly imported group can be locked again as a draft, and the lock
   // can arrive after the form first renders editable, so re-read whichever is showing.
+  // Each read is bounded (shortWait): if the lock hides the input mid-read, that attempt gives up and
+  // the next one reads the read-only value, instead of one read waiting out the whole poll.
   async expectVillage(village) {
+    const read = { timeout: TIMEOUTS.shortWait };
     await expect
       .poll(
         async () => {
           if (await this.villageInput.isVisible()) {
-            return this.villageInput.inputValue();
+            return this.villageInput.inputValue(read).catch(() => null);
           }
           if (await this.villageValue.isVisible()) {
-            return (await this.villageValue.innerText()).trim();
+            const shown = await this.villageValue
+              .innerText(read)
+              .catch(() => null);
+            return shown === null ? null : shown.trim();
           }
           return null;
         },

@@ -72,10 +72,12 @@ class AddProductPage extends BasePage {
     await this.autoApprovalInput.fill(percent);
   }
 
-  // { "<group type>": "<criteria set name>" }, one per row of the Group Types table.
-  // Each row's link field only offers sets of that row's group type.
-  async selectCriteriaSets(setsByGroupType) {
-    for (const [groupType, setName] of Object.entries(setsByGroupType)) {
+  // For each Group Types row, open its Eligibility Criteria Set field and pick the first set offered.
+  // Each row's link field only offers sets of that row's group type, so no set name is pinned (set names
+  // differ between environments). Returns { "<group type>": "<criteria set name>" } for the checks.
+  async selectFirstOfferedCriteriaSets(groupTypes) {
+    const selected = {};
+    for (const groupType of groupTypes) {
       const row = this.groupTypeRow.filter({
         has: this.page
           .locator(SELECTORS.productGroupTypeCell)
@@ -84,11 +86,26 @@ class AddProductPage extends BasePage {
       await row
         .locator(SELECTORS.productCriteriaSetCell)
         .click({ timeout: TIMEOUTS.default });
-      await this.searchByAutocomplete(
-        row.locator(SELECTORS.productCriteriaSetInput),
-        setName,
-      );
+      const input = row.locator(SELECTORS.productCriteriaSetInput);
+      await input.waitFor({ state: "visible", timeout: TIMEOUTS.default });
+      await input.click(); // an empty link field lists the sets on focus
+      const firstSet = this.page
+        .locator(SELECTORS.autocompleteListbox)
+        .locator(SELECTORS.autocompleteDropdownOption)
+        .filter({ has: this.page.locator(SELECTORS.autocompleteOptionTitle) })
+        .first();
+      await expect(
+        firstSet,
+        `no ${groupType} criteria set is offered for a product`,
+      ).toBeVisible({ timeout: TIMEOUTS.default });
+      const setName = await firstSet
+        .locator(SELECTORS.autocompleteOptionTitle)
+        .getAttribute("title");
+      await firstSet.click();
+      await expect(input).toHaveValue(setName, { timeout: TIMEOUTS.default });
+      selected[groupType] = setName;
     }
+    return selected;
   }
 
   async clickSaveProduct() {

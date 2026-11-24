@@ -205,8 +205,11 @@ const SELECTORS = {
   geofenceBranchFilter: '[data-slot="button"]:text-is("Branch")',
   // a geofence row that opens its detail panel (not the collapsible country header)
   geofenceSelectableRow: "ul.space-y-0 li[aria-selected]",
-  // "No assigned users" / "No assigned products" in an empty assignment section
-  geofenceAssignedEmpty: "div.text-muted-foreground.py-2.text-sm",
+  // An assignment section first shows "Loading users" / "Loading products", then its items or
+  // "No assigned users" / "No assigned products". Both placeholders share the same CSS classes,
+  // so they are told apart by their text.
+  geofenceAssignedLoadingText: "Loading",
+  geofenceAssignedEmptyText: "No assigned",
   geofenceDetailBackBtn: 'button:has-text("Back")',
 
   // Classification — list-view actions
@@ -228,8 +231,9 @@ const SELECTORS = {
 
   // Classification Summary modal — fully eligible (green)
   classificationSummaryPillGreen: ".modal.fade.show span.indicator-pill.green",
+  // pattern: the product count is the selected group's eligible products (VF Dev: "across 2 products")
   classificationSummaryTextGreen:
-    "Classification triggered for 1 group across 1 product",
+    "^Classification triggered for 1 group across \\d+ products?$",
 
   // Groups list — fully eligible badge
   fullyEligibleBadge: 'span.badge.badge-success[title="Fully Eligible"]',
@@ -251,7 +255,8 @@ const SELECTORS = {
 
   // Lead detail — tasks section
   leadTasksGroupHead: "div.dl-tasks-group-head",
-  leadTasksStagePill: "div.dl-tasks-group-head span.indicator-pill.cyan",
+  // the stage pill's colour differs per stage (cyan Client Assessment, orange Loan Assessment): match by text
+  leadTasksStagePill: "div.dl-tasks-group-head span.indicator-pill",
   leadTasksCountLabel: "div.dl-tasks-group-head span.text-muted.small",
   leadCurrentWorkflowStage:
     '[data-fieldname="current_workflow_stage"] .control-value.like-disabled-input',
@@ -266,6 +271,8 @@ const SELECTORS = {
   // Autocomplete dropdown
   autocompleteListbox: 'ul[role="listbox"]:not([hidden])',
   autocompleteDropdownOption: '[role="option"]',
+  // an option's record name (as opposed to "Create a new …" / "Advanced Search" entries)
+  autocompleteOptionTitle: "p[title]",
 
   // Groups list — data correction badge
   dataCorrectionalBadge:
@@ -411,7 +418,11 @@ const SELECTORS = {
     '.form-layout [data-fieldname="dreamlink_number"]:visible',
 
   // Lead detail — tasks section (assessment / assignment)
-  leadTaskRows: "div.dl-tasks-group div.grid-row",
+  // Lead detail tasks are grouped by workflow stage, one div.dl-tasks-group each (a lead can have several)
+  leadTasksGroup: "div.dl-tasks-group",
+  leadAssessmentStage: "Client Assessment",
+  // a group's task rows (the heading row sits outside .grid-body)
+  leadTaskRows: "div.grid-body div.grid-row",
   leadTaskStatusPills: "span.dl-task-status-pill",
   leadAssignTasksBtn: 'button[data-action="assign-tasks"]',
   leadTaskTitleCell: ".dl-task-col-title",

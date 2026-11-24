@@ -33,10 +33,13 @@ test.describe("DreamLink CRM - Products", () => {
     await productsPage.expectProductListPopulated();
   });
 
-  test(
-    "TC-PR-02 | New product can be created with every field and both group-type criteria sets, and is searchable",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-PR-02 | New product can be created with every field and both group-type criteria sets, and is searchable", async ({
+      page,
+    }) => {
       const product = addProductData.newProduct;
       const uniqueName = `${product.baseName}_${Date.now()}`;
       const productCode = `${product.codePrefix}${Date.now()}`;
@@ -51,7 +54,9 @@ test.describe("DreamLink CRM - Products", () => {
       await addProductPage.fillAutoApprovalThreshold(
         product.autoApprovalThreshold,
       );
-      await addProductPage.selectCriteriaSets(product.criteriaSets);
+      const criteriaSets = await addProductPage.selectFirstOfferedCriteriaSets(
+        product.groupTypes,
+      );
       await addProductPage.clickSaveProduct();
       await addProductPage.confirmAutoApprovalThreshold(
         addProductData.thresholdConfirmTitle,
@@ -65,16 +70,16 @@ test.describe("DreamLink CRM - Products", () => {
       await productsPage.expectProductListed(uniqueName);
 
       // and kept what was entered
-      await productsPage.clickFirstProduct();
+      await productsPage.openProduct(uniqueName);
       await productDetailPage.expectLoaded();
       await productDetailPage.expectProductName(uniqueName);
       await productDetailPage.expectProductCode(productCode);
       await productDetailPage.expectAutoApprovalThreshold(
         product.autoApprovalThreshold,
       );
-      await productDetailPage.expectCriteriaSets(product.criteriaSets);
-    },
-  );
+      await productDetailPage.expectCriteriaSets(criteriaSets);
+    });
+  });
 
   test("TC-PR-03 | View the details of an existing Product and verify the displayed Product name verification", async ({
     page,

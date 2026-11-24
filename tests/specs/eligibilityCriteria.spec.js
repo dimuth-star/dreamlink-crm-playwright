@@ -71,10 +71,13 @@ test.describe("DreamLink CRM - Eligibility Criteria", () => {
     await criteriaSearchBar.expectNoResults(criteriaData.noResultsMessage);
   });
 
-  test(
-    "TC-EC-05 | New DreamSave criterion can be created and is listed with its group type and logic",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-EC-05 | New DreamSave criterion can be created and is listed with its group type and logic", async ({
+      page,
+    }) => {
       const criterion = addCriterionData.dreamSaveCriterion;
       const uniqueName = `${criterion.baseName}_${Date.now()}`;
 
@@ -95,13 +98,16 @@ test.describe("DreamLink CRM - Eligibility Criteria", () => {
         criterion.groupType,
         criterion.logicText,
       );
-    },
-  );
+    });
+  });
 
-  test(
-    "TC-EC-06 | New Non-DreamSave criterion can be created and is listed with its group type and logic",
-    { retries: 0 },
-    async ({ page }) => {
+  // Creates data, so it is never retried (a retry could create it twice). Test-level options cannot
+  // set retries; test.describe.configure can.
+  test.describe("Creates data (never retried)", () => {
+    test.describe.configure({ retries: 0 });
+    test("TC-EC-06 | New Non-DreamSave criterion can be created and is listed with its group type and logic", async ({
+      page,
+    }) => {
       const criterion = addCriterionData.nonDreamSaveCriterion;
       const uniqueName = `${criterion.baseName}_${Date.now()}`;
 
@@ -122,6 +128,6 @@ test.describe("DreamLink CRM - Eligibility Criteria", () => {
         criterion.groupType,
         criterion.logicText,
       );
-    },
-  );
+    });
+  });
 });

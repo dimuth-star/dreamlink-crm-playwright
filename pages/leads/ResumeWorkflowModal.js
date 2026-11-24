@@ -21,8 +21,10 @@ class ResumeWorkflowModal extends BasePage {
 
   // --- assertions ---
   // The body names the lead ("…on lead LEAD-00222. Do you want to continue?"), so the right one is confirmed.
+  // The title carries the product name, whose capitalisation differs between environments.
   async expectOpenFor(title, leadNumber) {
     await expect(this.modal).toContainText(title, {
+      ignoreCase: true,
       timeout: TIMEOUTS.default,
     });
     await expect(this.modal).toContainText(leadNumber, {

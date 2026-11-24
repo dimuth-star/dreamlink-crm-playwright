@@ -20,7 +20,7 @@ const { LeadsPage } = require("../../pages/leads/LeadsPage");
 const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, getFoAssignee } = require("../../util/helpers");
 const { noMatchKeyword } = require("../../util/searchKeywords");
 const {
   buildPaperGroupRows,
@@ -193,6 +193,8 @@ test.describe("DreamLink CRM - Paper Groups", () => {
   });
 
   test.describe.serial("Paper Group lifecycle", () => {
+    // every test here creates data, so the block is never retried (see CLAUDE.md §3)
+    test.describe.configure({ retries: 0 });
     let runPrefix;
     let groupNames = [];
 
@@ -233,47 +235,45 @@ test.describe("DreamLink CRM - Paper Groups", () => {
       }
     });
 
-    test(
-      "TC-PG-03 | Uploading a valid template with 3 groups, reviewing and confirming the import lists all 3 groups",
-      { retries: 0 },
-      async ({ page }, testInfo) => {
-        const data = paperGroupsData.validUpload;
-        const stamp = Date.now();
-        runPrefix = `${data.baseName} ${stamp}`;
-        const { names, rows } = buildPaperGroupRows({
-          baseName: data.baseName,
-          stamp,
-          count: data.groupCount,
-          defaults: data,
-        });
-        groupNames = names;
-        const filePath = await writePaperGroupsFile(
-          testInfo.outputPath("paperGroups.xlsx"),
-          paperGroupsData.template.headers,
-          rows,
-        );
+    test("TC-PG-03 | Uploading a valid template with 3 groups, reviewing and confirming the import lists all 3 groups", async ({
+      page,
+    }, testInfo) => {
+      const data = paperGroupsData.validUpload;
+      const stamp = Date.now();
+      runPrefix = `${data.baseName} ${stamp}`;
+      const { names, rows } = buildPaperGroupRows({
+        baseName: data.baseName,
+        stamp,
+        count: data.groupCount,
+        defaults: data,
+      });
+      groupNames = names;
+      const filePath = await writePaperGroupsFile(
+        testInfo.outputPath("paperGroups.xlsx"),
+        paperGroupsData.template.headers,
+        rows,
+      );
 
-        // Upload and validate
-        await paperGroupsPage.clickUploadGroups();
-        await uploadModal.uploadFile(paperGroupsData.partner, filePath);
+      // Upload and validate
+      await paperGroupsPage.clickUploadGroups();
+      await uploadModal.uploadFile(paperGroupsData.partner, filePath);
 
-        // Review and confirm
-        await reviewModal.expectOpen();
-        await reviewModal.expectSummary(data.reviewSummaryMessage);
-        await reviewModal.proceedWithImport();
-        await reviewModal.expectImportedToast(
-          data.groupCount,
-          data.importedMessageSuffix,
-        );
-        await paperGroupsPage.expectImportFinished();
+      // Review and confirm
+      await reviewModal.expectOpen();
+      await reviewModal.expectSummary(data.reviewSummaryMessage);
+      await reviewModal.proceedWithImport();
+      await reviewModal.expectImportedToast(
+        data.groupCount,
+        data.importedMessageSuffix,
+      );
+      await paperGroupsPage.expectImportFinished();
 
-        // Assert all groups are listed
-        await paperGroupsPage.open();
-        await paperGroupsPage.expectLoaded();
-        await paperGroupsPage.searchByGroupName(runPrefix);
-        await paperGroupsPage.expectResultCount(data.groupCount);
-      },
-    );
+      // Assert all groups are listed
+      await paperGroupsPage.open();
+      await paperGroupsPage.expectLoaded();
+      await paperGroupsPage.searchByGroupName(runPrefix);
+      await paperGroupsPage.expectResultCount(data.groupCount);
+    });
 
     test("TC-PG-04 | Editing a paper group's village and saving persists the change", async ({
       page,
@@ -312,64 +312,64 @@ test.describe("DreamLink CRM - Paper Groups", () => {
   // assigned, the group is locked and can no longer be edited or deleted, so this data stays on QA by design.
   // The group is named "QA ASM <timestamp>-1" to make it easy to find.
   test.describe.serial("Paper Group assessment and task assignment", () => {
+    // every test here creates data, so the block is never retried (see CLAUDE.md §3)
+    test.describe.configure({ retries: 0 });
     let assessedGroupName;
 
-    test(
-      "TC-PG-06 | Running an assessment on an uploaded Verification Ready paper group generates its DreamLink number",
-      { retries: 0 },
-      async ({ page }, testInfo) => {
-        const data = paperGroupsData.assessment;
-        const upload = paperGroupsData.validUpload;
-        const { names, rows } = buildPaperGroupRows({
-          baseName: data.baseName,
-          stamp: Date.now(),
-          count: data.groupCount,
-          defaults: { ...upload, cycleNumber: data.cycleNumber },
-        });
-        assessedGroupName = names[0];
-        const filePath = await writePaperGroupsFile(
-          testInfo.outputPath("paperGroupsAssessment.xlsx"),
-          paperGroupsData.template.headers,
-          rows,
-        );
+    test("TC-PG-06 | Running an assessment on an uploaded Verification Ready paper group generates its DreamLink number", async ({
+      page,
+    }, testInfo) => {
+      const data = paperGroupsData.assessment;
+      const upload = paperGroupsData.validUpload;
+      const { names, rows } = buildPaperGroupRows({
+        baseName: data.baseName,
+        stamp: Date.now(),
+        count: data.groupCount,
+        defaults: { ...upload, cycleNumber: data.cycleNumber },
+      });
+      assessedGroupName = names[0];
+      const filePath = await writePaperGroupsFile(
+        testInfo.outputPath("paperGroupsAssessment.xlsx"),
+        paperGroupsData.template.headers,
+        rows,
+      );
 
-        // Upload, review and confirm the import
-        await paperGroupsPage.clickUploadGroups();
-        await uploadModal.uploadFile(paperGroupsData.partner, filePath);
-        await reviewModal.expectOpen();
-        await reviewModal.expectSummary(upload.reviewSummaryMessage);
-        await reviewModal.proceedWithImport();
-        await reviewModal.expectImportedToast(
-          data.groupCount,
-          upload.importedMessageSuffix,
-        );
-        await paperGroupsPage.expectImportFinished();
+      // Upload, review and confirm the import
+      await paperGroupsPage.clickUploadGroups();
+      await uploadModal.uploadFile(paperGroupsData.partner, filePath);
+      await reviewModal.expectOpen();
+      await reviewModal.expectSummary(upload.reviewSummaryMessage);
+      await reviewModal.proceedWithImport();
+      await reviewModal.expectImportedToast(
+        data.groupCount,
+        upload.importedMessageSuffix,
+      );
+      await paperGroupsPage.expectImportFinished();
 
-        // The group is Verification Ready
-        await paperGroupsPage.open();
-        await paperGroupsPage.expectLoaded();
-        await paperGroupsPage.searchByGroupName(assessedGroupName);
-        await paperGroupsPage.expectResultCount(1);
-        await paperGroupsPage.expectFirstRowContains(data.classification);
+      // The group is Verification Ready
+      await paperGroupsPage.open();
+      await paperGroupsPage.expectLoaded();
+      await paperGroupsPage.searchByGroupName(assessedGroupName);
+      await paperGroupsPage.expectResultCount(1);
+      await paperGroupsPage.expectFirstRowContains(data.classification);
 
-        // Start the assessment
-        await paperGroupsPage.selectFirstGroup();
-        await paperGroupsPage.startAssessment();
-        await assessmentModal.expectOpen();
-        await assessmentModal.selectProduct(data.product);
-        await assessmentModal.confirm();
-        await assessmentModal.expectAssessmentInitiated(data.resultMessage);
+      // Start the assessment
+      await paperGroupsPage.selectFirstGroup();
+      await paperGroupsPage.startAssessment();
+      await assessmentModal.expectOpen();
+      await assessmentModal.selectProduct(data.product);
+      await assessmentModal.confirm();
+      await assessmentModal.expectAssessmentInitiated(data.resultMessage);
 
-        // DreamLink number is generated and the group is locked
-        await paperGroupsPage.open();
-        await paperGroupsPage.expectLoaded();
-        await paperGroupsPage.searchByGroupName(assessedGroupName);
-        await paperGroupsPage.clickFirstGroup();
-        await detailPage.expectLoaded();
-        await detailPage.expectDreamLinkNumber(data.dreamLinkPattern);
-        await detailPage.expectLocked(data.lockedMessage);
-      },
-    );
+      // DreamLink number is generated and the group is locked
+      await paperGroupsPage.open();
+      await paperGroupsPage.expectLoaded();
+      await paperGroupsPage.searchByGroupName(assessedGroupName);
+      await paperGroupsPage.clickFirstGroup();
+      await detailPage.expectLoaded();
+      await detailPage.expectDreamLinkNumber(data.dreamLinkPattern);
+      await detailPage.expectLocked(data.lockedMessage);
+    });
 
     test("TC-PG-07 | A lead is created for the assessed group with 6 unassigned tasks", async ({
       page,
@@ -388,12 +388,12 @@ test.describe("DreamLink CRM - Paper Groups", () => {
       );
     });
 
-    test("TC-PG-08 | Assigning the lead's 6 tasks to fo.zambia marks every task Assigned to FO Zambia", async ({
+    test("TC-PG-08 | Assigning the lead's 6 tasks to the Field Officer marks every task Assigned to them", async ({
       page,
     }) => {
       const data = paperGroupsData.assessment;
-      const { searchTerm, userName, successMessage } =
-        paperGroupsData.assignment;
+      const { successMessagePrefix } = paperGroupsData.assignment;
+      const fieldOfficer = getFoAssignee();
       await leadsPage.open();
       await leadsSearchBar.searchBySavingGroup(assessedGroupName);
       await leadsPage.expectLeadRowVisible();
@@ -402,11 +402,14 @@ test.describe("DreamLink CRM - Paper Groups", () => {
 
       await leadDetailPage.clickAssignTasks();
       await assignTasksModal.expectOpen();
-      await assignTasksModal.selectUser(searchTerm);
+      await assignTasksModal.selectUser(fieldOfficer.username);
       await assignTasksModal.clickAssign();
-      await assignTasksModal.expectConfirmationFor(userName);
+      await assignTasksModal.expectConfirmationFor(fieldOfficer.displayName);
       await assignTasksModal.confirm();
-      await assignTasksModal.expectAssignedToast(successMessage);
+      await assignTasksModal.expectAssignedToast(
+        successMessagePrefix,
+        fieldOfficer.displayName,
+      );
 
       await leadDetailPage.reload();
       await leadDetailPage.expectTaskCount(data.leadTaskCount);
@@ -416,7 +419,7 @@ test.describe("DreamLink CRM - Paper Groups", () => {
       );
       await leadDetailPage.expectAllTasksAssignedTo(
         data.leadTaskCount,
-        userName,
+        fieldOfficer.displayName,
       );
     });
   });

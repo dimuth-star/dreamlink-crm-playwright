@@ -183,11 +183,16 @@ class GeofencePage extends BasePage {
   }
 
   // Items in an "Assigned users/products" section, once it shows either items or its empty message.
+  // The section loads after the geofence opens ("Loading users/products"), so count only once it has
+  // settled on either its items or its "No assigned …" message.
   async countAssigned(configureBtn) {
     const section = configureBtn.locator("xpath=ancestor::section");
+    await expect(
+      section.getByText(SELECTORS.geofenceAssignedLoadingText),
+    ).toHaveCount(0, { timeout: TIMEOUTS.default });
     const items = section.locator(SELECTORS.geofenceAssignedItemName);
     await items
-      .or(section.locator(SELECTORS.geofenceAssignedEmpty))
+      .or(section.getByText(SELECTORS.geofenceAssignedEmptyText))
       .first()
       .waitFor({ state: "visible", timeout: TIMEOUTS.default });
     return items.count();

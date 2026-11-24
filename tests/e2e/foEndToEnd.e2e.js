@@ -23,7 +23,7 @@ const { LeadsPage } = require("../../pages/leads/LeadsPage");
 const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, getFoAssignee } = require("../../util/helpers");
 const {
   buildPaperGroupRows,
   writePaperGroupsFile,
@@ -65,100 +65,103 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
   });
 
   // Leaves one locked group, its lead and 6 tasks on QA by design (assessed groups cannot be deleted).
-  test(
-    "TC-FO-01 | Verification Ready group is assessed, its lead gets 6 tasks and all are assigned to fo.zambia @fo-setup",
-    { retries: 0 },
-    async ({ page }, testInfo) => {
-      const { upload, assessment, assignment } = foData;
-      clearRunState();
-      const { names, rows } = buildPaperGroupRows({
-        baseName: upload.baseName,
-        stamp: Date.now(),
-        count: upload.groupCount,
-        defaults: upload,
-      });
-      const groupName = names[0];
-      const filePath = await writePaperGroupsFile(
-        testInfo.outputPath("foEndToEnd.xlsx"),
-        paperGroupsData.template.headers,
-        rows,
-      );
+  test("TC-FO-01 | Verification Ready group is assessed, its lead gets 6 tasks and all are assigned to the Field Officer @fo-setup", async ({
+    page,
+  }, testInfo) => {
+    const { upload, assessment, assignment } = foData;
+    clearRunState();
+    const { names, rows } = buildPaperGroupRows({
+      baseName: upload.baseName,
+      stamp: Date.now(),
+      count: upload.groupCount,
+      defaults: upload,
+    });
+    const groupName = names[0];
+    const filePath = await writePaperGroupsFile(
+      testInfo.outputPath("foEndToEnd.xlsx"),
+      paperGroupsData.template.headers,
+      rows,
+    );
 
-      // Upload, review and confirm the import (10 members, cycle 3 => Verification Ready)
-      await paperGroupsPage.open();
-      await paperGroupsPage.expectLoaded();
-      await paperGroupsPage.clickUploadGroups();
-      await uploadModal.uploadFile(paperGroupsData.partner, filePath);
-      await reviewModal.expectOpen();
-      await reviewModal.expectSummary(
-        paperGroupsData.validUpload.reviewSummaryMessage,
-      );
-      await reviewModal.proceedWithImport();
-      await reviewModal.expectImportedToast(
-        upload.groupCount,
-        paperGroupsData.validUpload.importedMessageSuffix,
-      );
-      await paperGroupsPage.expectImportFinished();
+    // Upload, review and confirm the import (10 members, cycle 3 => Verification Ready)
+    await paperGroupsPage.open();
+    await paperGroupsPage.expectLoaded();
+    await paperGroupsPage.clickUploadGroups();
+    await uploadModal.uploadFile(paperGroupsData.partner, filePath);
+    await reviewModal.expectOpen();
+    await reviewModal.expectSummary(
+      paperGroupsData.validUpload.reviewSummaryMessage,
+    );
+    await reviewModal.proceedWithImport();
+    await reviewModal.expectImportedToast(
+      upload.groupCount,
+      paperGroupsData.validUpload.importedMessageSuffix,
+    );
+    await paperGroupsPage.expectImportFinished();
 
-      // Start the assessment
-      await paperGroupsPage.open();
-      await paperGroupsPage.expectLoaded();
-      await paperGroupsPage.searchByGroupName(groupName);
-      await paperGroupsPage.expectResultCount(1);
-      await paperGroupsPage.expectFirstRowContains(assessment.classification);
-      await paperGroupsPage.startAssessmentWhenReady(groupName);
-      await assessmentModal.expectOpen();
-      await assessmentModal.selectProduct(assessment.product);
-      await assessmentModal.confirm();
-      await assessmentModal.expectAssessmentInitiated(assessment.resultMessage);
+    // Start the assessment
+    await paperGroupsPage.open();
+    await paperGroupsPage.expectLoaded();
+    await paperGroupsPage.searchByGroupName(groupName);
+    await paperGroupsPage.expectResultCount(1);
+    await paperGroupsPage.expectFirstRowContains(assessment.classification);
+    await paperGroupsPage.startAssessmentWhenReady(groupName);
+    await assessmentModal.expectOpen();
+    await assessmentModal.selectProduct(assessment.product);
+    await assessmentModal.confirm();
+    await assessmentModal.expectAssessmentInitiated(assessment.resultMessage);
 
-      // DreamLink number generated
-      await paperGroupsPage.open();
-      await paperGroupsPage.expectLoaded();
-      await paperGroupsPage.searchByGroupName(groupName);
-      await paperGroupsPage.clickFirstGroup();
-      await groupDetailPage.expectLoaded();
-      await groupDetailPage.expectDreamLinkNumber(assessment.dreamLinkPattern);
-      await groupDetailPage.expectLocked(assessment.lockedMessage);
+    // DreamLink number generated
+    await paperGroupsPage.open();
+    await paperGroupsPage.expectLoaded();
+    await paperGroupsPage.searchByGroupName(groupName);
+    await paperGroupsPage.clickFirstGroup();
+    await groupDetailPage.expectLoaded();
+    await groupDetailPage.expectDreamLinkNumber(assessment.dreamLinkPattern);
+    await groupDetailPage.expectLocked(assessment.lockedMessage);
 
-      // Lead created with 6 unassigned tasks
-      await leadsPage.open();
-      await leadsSearchBar.searchBySavingGroup(groupName);
-      await leadsPage.expectLeadRowVisible();
-      await leadsPage.clickFirstLead();
-      await leadDetailPage.expectLoaded();
-      await leadDetailPage.expectLeadSavingGroup(groupName);
-      await leadDetailPage.expectTaskCount(assessment.taskCount);
-      await leadDetailPage.expectAllTasksStatus(
-        assessment.taskCount,
-        assessment.unassignedStatus,
-      );
+    // Lead created with 6 unassigned tasks
+    await leadsPage.open();
+    await leadsSearchBar.searchBySavingGroup(groupName);
+    await leadsPage.expectLeadRowVisible();
+    await leadsPage.clickFirstLead();
+    await leadDetailPage.expectLoaded();
+    await leadDetailPage.expectLeadSavingGroup(groupName);
+    await leadDetailPage.expectTaskCount(assessment.taskCount);
+    await leadDetailPage.expectAllTasksStatus(
+      assessment.taskCount,
+      assessment.unassignedStatus,
+    );
 
-      // Assign all tasks to fo.zambia
-      await leadDetailPage.clickAssignTasks();
-      await assignTasksModal.expectOpen();
-      await assignTasksModal.selectUser(assignment.searchTerm);
-      await assignTasksModal.clickAssign();
-      await assignTasksModal.expectConfirmationFor(assignment.userName);
-      await assignTasksModal.confirm();
-      await assignTasksModal.expectAssignedToast(assignment.successMessage);
-      await leadDetailPage.reload();
-      await leadDetailPage.expectAllTasksStatus(
-        assessment.taskCount,
-        assessment.assignedStatus,
-      );
-      await leadDetailPage.expectAllTasksAssignedTo(
-        assessment.taskCount,
-        assignment.userName,
-      );
+    // Assign all tasks to the Field Officer who signs in to the app
+    const fieldOfficer = getFoAssignee();
+    await leadDetailPage.clickAssignTasks();
+    await assignTasksModal.expectOpen();
+    await assignTasksModal.selectUser(fieldOfficer.username);
+    await assignTasksModal.clickAssign();
+    await assignTasksModal.expectConfirmationFor(fieldOfficer.displayName);
+    await assignTasksModal.confirm();
+    await assignTasksModal.expectAssignedToast(
+      assignment.successMessagePrefix,
+      fieldOfficer.displayName,
+    );
+    await leadDetailPage.reload();
+    await leadDetailPage.expectAllTasksStatus(
+      assessment.taskCount,
+      assessment.assignedStatus,
+    );
+    await leadDetailPage.expectAllTasksAssignedTo(
+      assessment.taskCount,
+      fieldOfficer.displayName,
+    );
 
-      // Hand the group over to the mobile step
-      writeRunState({ groupName });
-    },
-  );
+    // Hand the group over to the mobile step
+    writeRunState({ groupName });
+  });
 
   test("TC-FO-03 | All 6 tasks completed in the Field Officer app sync back to CRM as Completed @fo-verify", async () => {
-    const { assessment, assignment } = foData;
+    const { assessment } = foData;
+    const fieldOfficer = getFoAssignee();
     const { groupName } = readRunState();
     await leadsPage.open();
     await leadsSearchBar.searchBySavingGroup(groupName);
@@ -174,7 +177,7 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
     );
     await leadDetailPage.expectTasksStatusEventually(
       taskTitles,
-      assignment.userName,
+      fieldOfficer.displayName,
     );
   });
 });

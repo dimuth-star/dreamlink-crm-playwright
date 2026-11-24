@@ -37,7 +37,7 @@ class FormAnswerRules {
       // function tokens give every question its own value: unique IDs, random names
       "{{idNumber}}": () => randomNrc(),
       "{{tpin}}": () => randomTpin(),
-      "{{mobile}}": () => randomMobile(),
+      "{{mobile}}": () => randomMobile(client.mobilePrefixes),
       "{{firstName}}": () => randomName(client.names, "first"),
       "{{lastName}}": () => randomName(client.names, "last"),
       "{{fullName}}": () => randomName(client.names, "full"),

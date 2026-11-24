@@ -10,7 +10,10 @@ const rules = new FormAnswerRules({
   group: foData.upload,
 });
 const daysFromToday = (date) => Math.round((date - new Date()) / 86400000);
-const MOBILE_FORMAT = /^\+260(95|96|97|76|77)\d{7}$/;
+// +260, one of the fixture's operator prefixes, 7 digits
+const MOBILE_FORMAT = new RegExp(
+  `^\\+260(${foData.client.mobilePrefixes.join("|")})\\d{7}$`,
+);
 const checks = [];
 const check = (name, fn) => checks.push([name, fn]);
 

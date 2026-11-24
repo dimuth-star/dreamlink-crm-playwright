@@ -15,12 +15,15 @@ class PaperGroupAssessmentModal extends BasePage {
       .filter({ hasText: SELECTORS.paperGroupAssessmentResultTitle });
   }
 
+  // Case-insensitive: the same product is "FAST Loan" on QA and "Fast Loan" on VF Dev.
   async selectProduct(productName) {
     await this.productSelect.waitFor({
       state: "attached",
       timeout: TIMEOUTS.default,
     });
-    await this.productSelect.selectOption({ label: productName });
+    await this.selectOptionByLabel(this.productSelect, productName, {
+      ignoreCase: true,
+    });
   }
 
   async confirm() {
