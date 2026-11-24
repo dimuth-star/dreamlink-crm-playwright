@@ -9,8 +9,15 @@ const { BasePage } = require("./BasePage");
 
 // Status sections are horizontal pages in lifecycle order (same order as MOBILE_TEXT.taskSections).
 // A task moves right as it progresses: Newly Assigned (not scheduled) -> To Do (scheduled) ->
-// In Progress (started) -> Completed. The pager has one more page after Completed, with no header.
-const SECTION = { newlyAssigned: 0, toDo: 1, inProgress: 2, completed: 3 };
+// In Progress (started) -> Completed. The last page, "Unable to Continue", holds tasks marked so from
+// More actions; it only has a header while it holds tasks, so it is optional (see goToOptionalSection).
+const SECTION = {
+  newlyAssigned: 0,
+  toDo: 1,
+  inProgress: 2,
+  completed: 3,
+  unableToContinue: 4,
+};
 // Where to look for a task, most likely first: fresh tasks are always in Newly Assigned; tasks left
 // mid-way by an earlier run are found by following the lifecycle.
 const SEARCH_ORDER = [
@@ -18,6 +25,7 @@ const SEARCH_ORDER = [
   SECTION.inProgress,
   SECTION.toDo,
   SECTION.completed,
+  SECTION.unableToContinue,
 ];
 const MAX_SECTION_SWIPES = 8; // 5 pages: enough to cross the whole pager in either direction
 // Task detail -> form -> nested dialog is the deepest the app can be left; 6 backs always reach the list.
@@ -55,7 +63,7 @@ class TaskListScreen extends BasePage {
   }
 
   // The pager keeps only the page on screen in the tree, so its header tells where we are.
-  // Returns the SECTION index, or null on the page after Completed (it has no header).
+  // Returns the SECTION index, or null on the last page while it is empty (it then has no header).
   async currentSection() {
     for (const [index, name] of MOBILE_TEXT.taskSections.entries()) {
       if (await this.exists(MOBILE.sectionHeader(name))) return index;
@@ -90,6 +98,19 @@ class TaskListScreen extends BasePage {
     throw new Error(
       `could not reach the "${MOBILE_TEXT.taskSections[index]}" section`,
     );
+  }
+
+  // Goes to a section; returns false for an empty "Unable to Continue" page (no header to find):
+  // one swipe past Completed either shows its header or it holds no tasks.
+  async visitSection(index) {
+    if (index !== SECTION.unableToContinue) {
+      await this.goToSection(index);
+      return true;
+    }
+    if ((await this.currentSection()) === index) return true;
+    await this.goToSection(SECTION.completed);
+    await this.swipeSection("right", SECTION.completed);
+    return (await this.currentSection()) === index;
   }
 
   // Returns false when the group is not offered yet (its tasks have not synced to the device).
@@ -139,9 +160,14 @@ class TaskListScreen extends BasePage {
     await this.goToSection(SECTION.newlyAssigned);
     await this.recordCardsOnScreen(group, found, SECTION.newlyAssigned);
     if (found.size >= expected) return found;
-    for (const index of [SECTION.toDo, SECTION.inProgress, SECTION.completed]) {
-      await this.goToSection(index);
-      await this.recordCardsOnScreen(group, found, index);
+    for (const index of [
+      SECTION.toDo,
+      SECTION.inProgress,
+      SECTION.completed,
+      SECTION.unableToContinue,
+    ]) {
+      if (await this.visitSection(index))
+        await this.recordCardsOnScreen(group, found, index);
     }
     await this.goToSection(SECTION.newlyAssigned);
     return found;
@@ -176,7 +202,7 @@ class TaskListScreen extends BasePage {
         ? SEARCH_ORDER
         : [known, ...SEARCH_ORDER.filter((i) => i !== known)];
     for (const index of order) {
-      await this.goToSection(index);
+      if (!(await this.visitSection(index))) continue;
       if ((found = await this.exists(cardSel))) break;
     }
     if (!found)

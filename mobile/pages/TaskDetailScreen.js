@@ -1,5 +1,9 @@
 // Task detail: schedule, start, open forms, complete.
-const { MOBILE, MOBILE_TIMEOUTS } = require("../../common/mobileSelectors");
+const {
+  MOBILE,
+  MOBILE_TIMEOUTS,
+  MOBILE_TEXT,
+} = require("../../common/mobileSelectors");
 const { BasePage } = require("./BasePage");
 const { NativeDatePicker } = require("./components/NativeDatePicker");
 
@@ -86,6 +90,23 @@ class TaskDetailScreen extends BasePage {
     }
     await this.tapUntilGone(MOBILE.dialogYesBtn, MOBILE.confirmCompleteText);
     await this.expectToast(this.toasts.completed);
+  }
+
+  // More actions -> Mark Task as "Unable to Continue" -> pick the reason -> confirm, then the toast.
+  // More actions only exists on a started task, so it is gone once the task is marked: a retry skips this.
+  async markUnableToContinue(reason) {
+    if (!(await this.exists(MOBILE.moreActionsBtn))) return;
+    await this.tap(MOBILE.moreActionsBtn);
+    await this.tap(MOBILE.unableToContinueMenuItem);
+    await this.first(MOBILE.unableToContinueQuestion);
+    await this.tap(MOBILE.reasonField(MOBILE_TEXT.selectReason));
+    await this.tap(MOBILE.reasonOption(reason));
+    await this.first(MOBILE.reasonField(reason)); // the field now shows the chosen reason
+    await this.tapUntilGone(
+      MOBILE.unableToContinueConfirmBtn,
+      MOBILE.unableToContinueQuestion,
+    );
+    await this.expectToast(this.toasts.unableToContinue);
   }
 
   // --- assertions ---
