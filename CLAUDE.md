@@ -83,7 +83,7 @@ numbering from the highest existing ID:
 | Spec | Prefix | Existing IDs |
 | --- | --- | --- |
 | `login.spec.js` | `TC-DL` | 01–06 |
-| `groups.spec.js` | `TC-DS` | 01–05 |
+| `groups.spec.js` | `TC-DS` | 01–14 |
 | `users.spec.js` | `TC-US` | 01–04 |
 | `userProfile.spec.js` | `TC-UP` | 01 |
 | `eligibilityCriteria.spec.js` | `TC-EC` | 01–06 |
@@ -95,7 +95,7 @@ numbering from the highest existing ID:
 | `preLeads.spec.js` | `TC-PL` | 01–04 |
 | `tasks.spec.js` | `TC-TK` | 01–03 |
 | `forms.spec.js` | `TC-FM` | 01–05 |
-| `paperGroups.spec.js` | `TC-PG` | 01–08 |
+| `paperGroups.spec.js` | `TC-PG` | 01–19 |
 | `tests/e2e/foEndToEnd.e2e.js` + `mobile/specs/foTaskCompletion.e2e.js` | `TC-FO` | 01, 02.1–02.6 (one per task), 03 (see §4a) |
 
 Known app routes (used by `open()` methods): `/`, `/desk/dl-dreamsave-group`, `/desk/dl-user`,
@@ -324,6 +324,13 @@ QA data is cleared and the app redeployed regularly, so search fixtures hold **n
   match. Only the prefix is in the fixture.
 - Put the "every row contains" check **before** "record is listed": the discovered record is on
   screen before the filter applies, so only the first check proves the search ran.
+- **Every list filter** (TC-DS-06..14, TC-PG-09..19) follows the same pattern: the value is read from
+  a loaded row (`readFirst…()`), and the check is "no listed row lacks it" on that column
+  (`expectEveryRowHas` in `GroupsSearchBar` / `PaperGroupsSearchBar`). No-match tests loop over the
+  text filters named in the fixture (`invalidSearch.textFilters`), reopening the list each time.
+  DreamSave **Region** is tested only negatively: the list has no Region column and QA groups have
+  no region. Paper Groups filters live in `PaperGroupsSearchBar`; `PaperGroupsPage.searchByGroupName`
+  stays the one the lifecycle tests and TC-FO-01 use.
 
 Tests that need a record **in a given state** pick it at run time too:
 
