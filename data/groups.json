@@ -1,6 +1,7 @@
 {
   "invalidSearch": {
-    "keywordPrefix": "zz-no-match-"
+    "keywordPrefix": "zz-no-match-",
+    "textFilters": ["groupNumber", "meetingLocation", "region", "partner"]
   },
   "noResultsMessage": "No matching groups found.",
   "activeWorkflowSearch": {

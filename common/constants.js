@@ -15,6 +15,7 @@ const SELECTORS = {
   deskListRow: '.list-row-container[tabindex="1"]',
   deskLoadingIndicator: ".freeze.flex.justify-center.align-center.text-muted",
   deskNoResultsMessage: "div.no-result.text-muted p",
+  deskClearAllFiltersBtn: 'button[aria-label="Clear All Filters"]',
 
   // DreamSave Groups list page
   loggedInUser: "span.d-block.text-truncate:not(.text-secondary)",
@@ -31,6 +32,22 @@ const SELECTORS = {
   // the score badge has no title; the status badge carries its label as title (colour varies by status)
   groupProductScoreBadge: "span.badge:not([title])",
   groupProductStatusBadge: "span.badge[title]",
+  // list filters (standard filter bar) and the matching table cells
+  groupNumberFilter:
+    '.standard-filter-section input[data-fieldname="group_number"]',
+  groupMeetingLocationFilter:
+    '.standard-filter-section input[data-fieldname="meeting_location"]',
+  groupRegionFilter: '.standard-filter-section input[data-fieldname="region"]',
+  groupPartnerFilter:
+    '.standard-filter-section input[data-fieldname="partner"]',
+  groupProductFilter:
+    '.standard-filter-section input[data-fieldname="dl_requested_available_product_filter"]',
+  groupStatusFilter:
+    '.standard-filter-section select[data-fieldname="classification_status"]',
+  groupNumberCell: '.list-row-col[data-fieldname="group_number"]',
+  groupMeetingLocationCell: '.list-row-col[data-fieldname="meeting_location"]',
+  groupPartnerCell: '.list-row-col[data-fieldname="partner"]',
+  groupProductsCell: '.list-row-col[data-fieldname="products_and_eligibility"]',
 
   // DreamSave Group detail page
   groupNameDetail:
@@ -341,6 +358,30 @@ const SELECTORS = {
   paperGroupSearchInput:
     '.standard-filter-section input[data-fieldname="group_name"]',
   paperGroupNameLink: 'a.ellipsis[data-doctype="DL Non DreamSave Group"]',
+  paperGroupRegionFilter:
+    '.standard-filter-section input[data-fieldname="region"]',
+  paperGroupVillageFilter:
+    '.standard-filter-section input[data-fieldname="village"]',
+  paperGroupDistrictFilter:
+    '.standard-filter-section input[data-fieldname="district"]',
+  paperGroupClassificationFilter:
+    '.standard-filter-section select[data-fieldname="classification"]',
+  paperGroupImportBatchFilter:
+    '.standard-filter-section input[data-fieldname="import_batch"]',
+  paperGroupDuplicateFilter:
+    '.standard-filter-section input[data-fieldname="has_duplicate_warning"]',
+  paperGroupRegionCell: '.list-row-col[data-fieldname="region"]',
+  paperGroupVillageCell: '.list-row-col[data-fieldname="village"]',
+  paperGroupDistrictCell: '.list-row-col[data-fieldname="district"]',
+  paperGroupClassificationCell:
+    '.list-row-col[data-fieldname="classification"]',
+  paperGroupImportedListCell:
+    '.list-row-col[data-fieldname="imported_list_name"]',
+  paperGroupDuplicateBadge: "span.dl-duplicate-badge",
+  // partner chips above the filters: "All partners" plus one per partner ("<n> imported")
+  paperGroupPartnerChip: "button.dl-partner-filter-chip",
+  paperGroupPartnerChipLabel: ".dl-partner-filter-chip-label",
+  paperGroupPartnerChipCount: ".dl-partner-filter-chip-count",
   paperGroupToast: "div.alert.desk-alert",
 
   // Paper Group detail page
