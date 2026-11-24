@@ -54,7 +54,7 @@ data/uploads/*.xlsx        Static upload fixtures (invalid-file cases only; vali
 util/helpers.js            loadEnvFile(), getCredentials(); FO app: getFoApp(), getFoCredentials(), missingFoEnv().
 util/paperGroupFile.js     exceljs helpers: build/write/read Paper Groups .xlsx files (exceljs is a devDependency).
 util/loggers.js            logStep / logInfo / logError console wrappers.
-util/runState.js           Hand-off file between the three TC-FO steps (e2e-run/runState.json, git-ignored).
+util/runState.js           Hand-off file between the three steps of an FO flow (e2e-run/<flow>.json, git-ignored).
 util/clientDataGenerator.js  Run-date-relative dates and +260 phone formatting for the FO forms.
 util/formAnswerRules.js    Pure: which answer each FO form question gets (fixture rules). `npm run test:form-rules`.
 util/searchKeywords.js     Pure: run-time search keywords (noMatchKeyword, sharedWord). `npm run test:search-keywords`.
@@ -97,6 +97,7 @@ numbering from the highest existing ID:
 | `forms.spec.js` | `TC-FM` | 01–05 |
 | `paperGroups.spec.js` | `TC-PG` | 01–19 |
 | `tests/e2e/foEndToEnd.e2e.js` + `mobile/specs/foTaskCompletion.e2e.js` | `TC-FO` | 01, 02.1–02.6 (one per task), 03 (see §4a) |
+| `tests/e2e/foUnableToContinue.e2e.js` + `mobile/specs/foUnableToContinue.e2e.js` | `TC-FO` | 04–09 (see §4b) |
 
 Known app routes (used by `open()` methods): `/`, `/desk/dl-dreamsave-group`, `/desk/dl-user`,
 `/desk/dl-product`, `/desk/dl-lead`, `/desk/dl-pre-lead`, `/desk/dl-task`,
@@ -462,12 +463,43 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
   clean run` / `FAILED after n attempt(s)`; only the first counts as a clean pass. `FO_STRICT=1` turns retries off — use
   it for stability runs. Each task has a 15-min mocha limit (`MOBILE_TIMEOUTS.task`).
 - **Resuming:** every step is idempotent (scheduled/started steps and answered fields are skipped). The task list reads
-  the section on screen from its header (only the visible pager page is in the tree; the page after Completed has no
-  header), and a task completed by an interrupted run is opened and its Completed status checked, never assumed.
+  the section on screen from its header (only the visible pager page is in the tree). The last page, "Unable to
+  Continue", has a header only while it holds tasks, so `visitSection()` treats it as optional. A task completed by an
+  interrupted run is opened and its Completed status checked, never assumed.
 - **Device prep for clean runs:** keep the phone charging and awake, close floating overlays (screen recorders,
   mirroring), postpone system software updates (an update prompt covers the app and causes a retry), don't use the phone
   during a run. `waitForIdleTimeout: 0` is set deliberately: all waits are explicit, and dialog buttons use
   `tapUntilGone()` because a tap during a dialog's opening animation is ignored.
+
+## 4b. Field Officer "Unable to Continue" (`TC-FO-04..09`)
+
+Run with `npm run test:e2e:fo:utc` (same three-step shape as §4a, own tags `@fu-setup` / `@fu-verify`, own WebdriverIO
+config `mobile/wdio.unableToContinue.conf.js`, own state file `e2e-run/foUnableToContinue.json`; `wdio.conf.js` lists
+only the happy-path spec, so `npm run test:e2e:fo` never runs this one). Data: `data/foUnableToContinue.json`, plus the
+upload / assessment / assignment / task list from `data/foEndToEnd.json`.
+
+1. **TC-FO-04** (`@fu-setup`): one import with two groups (`E2E UTC <ts>-1`, `-2`), each assessed and its 6 tasks
+   assigned to fo.zambia; writes both group names and lead numbers.
+2. **TC-FO-05 / 06** (mobile): per group, pick one task at random (saved to the state file; a retry reuses it), schedule
+   today, start, then **More actions** → `Mark Task as “Unable to Continue”` → reason (**Incorrect information** for
+   group 1, **Group does not exist** for group 2) → `Yes, mark as “Unable to Continue”` → in-app toast "Task and 5
+   related tasks marked as Unable to Continue successfully." → task status "Unable to Continue".
+3. **TC-FO-07..09** (`@fu-verify`):
+   - **TC-FO-07** Incorrect information: all 6 tasks show "Unable to Continue"; the lead is **Paused** (pause reason
+     "Incorrect Information") with **Resume Workflow** / **Reject Workflow**.
+   - **TC-FO-08** Resume Workflow → dialog "Resume Paused FAST Loan Request" (names the lead) → Confirm: the task marked on
+     mobile returns to **In Progress** (the status it had before it was marked), the other 5 to **Assigned**; the lead is
+     Active again.
+   - **TC-FO-09** Group does not exist: the lead is **Rejected**, all 6 tasks "Unable to Continue", no Resume Workflow.
+
+- Task statuses are checked exactly per title (`LeadDetailPage.expectTaskStatusesEventually`), so "Un Assigned" can never
+  pass for "Assigned". `openLead` waits for the lead-number search to show its single row before clicking (until the
+  filter applies, the newest lead is listed first).
+- "More actions" (3 dots) only exists on a started task, and is gone once the task is marked, which is how a retry knows
+  the step is done.
+- Each run leaves two locked groups and their leads on QA; the resumed lead's tasks go back to FO Zambia's task list.
+- **Expected duration:** about 4–5 minutes (setup ~1.5 min, mobile ~1–2 min, verify ~1 min). A status poll that never
+  matches waits `TIMEOUTS.sync` (10 min) before failing.
 
 ### Dynamic / unique data
 
@@ -539,6 +571,7 @@ npx playwright test --grep "TC-LD-03" --workers=1
 npm run test:e2e:fo
 FO_STRICT=1 npm run test:e2e:fo                      # bash: no mobile retries (stability runs)
 $env:FO_STRICT="1"; npm run test:e2e:fo              # PowerShell
+npm run test:e2e:fo:utc                              # FO "Unable to Continue" flow (device + Appium, see §4b)
 npm run test:form-rules                              # pure FO answer-rule check, no device
 npm run test:search-keywords                         # pure search-keyword helper check, no browser
 
