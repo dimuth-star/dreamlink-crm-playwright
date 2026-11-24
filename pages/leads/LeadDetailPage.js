@@ -17,6 +17,20 @@ class LeadDetailPage {
     this.taskRows = page.locator(SELECTORS.leadTaskRows);
     this.taskStatusPills = page.locator(SELECTORS.leadTaskStatusPills);
     this.assignTasksBtn = page.locator(SELECTORS.leadAssignTasksBtn);
+    this.resumeWorkflowBtn = page.locator(SELECTORS.leadResumeWorkflowBtn);
+  }
+
+  async readLeadNumber() {
+    await expect(this.leadNumber).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await this.leadNumber.innerText()).trim();
+  }
+
+  async clickResumeWorkflow() {
+    await this.resumeWorkflowBtn.waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await this.resumeWorkflowBtn.click();
   }
 
   async clickAssignTasks() {
@@ -124,6 +138,46 @@ class LeadDetailPage {
     for (let i = 0; i < 6; i++) {
       await expect(pills.nth(i)).toContainText("Assigned");
     }
+  }
+
+  // Polls (reloading the lead each time) until every named task's status pill reads exactly the
+  // expected status: { "<task title>": "<status>" }. Exact, so "Un Assigned" never passes for "Assigned".
+  async expectTaskStatusesEventually(statusByTitle, timeout = TIMEOUTS.sync) {
+    await expect
+      .poll(
+        async () => {
+          await this.reload();
+          await this.taskStatusPills
+            .first()
+            .waitFor({ state: "visible", timeout: TIMEOUTS.default })
+            .catch(() => {});
+          const shown = {};
+          for (const title of Object.keys(statusByTitle)) {
+            const row = this.taskRows.filter({
+              has: this.page
+                .locator(SELECTORS.leadTaskTitleCell)
+                .and(this.page.getByText(title, { exact: true })),
+            });
+            shown[title] =
+              (await row.count()) === 1
+                ? (await row.locator(this.taskStatusPills).innerText()).trim()
+                : `${await row.count()} rows`;
+          }
+          return shown;
+        },
+        { timeout, intervals: [10000] },
+      )
+      .toEqual(statusByTitle);
+  }
+
+  // Checked once the tasks have loaded, so "not there yet" cannot pass for "not shown".
+  async expectResumeWorkflowHidden() {
+    await expect(this.taskStatusPills.first()).toBeVisible({
+      timeout: TIMEOUTS.default,
+    });
+    await expect(this.resumeWorkflowBtn).toHaveCount(0, {
+      timeout: TIMEOUTS.default,
+    });
   }
 
   // Polls (reloading the lead each time) until each named task's row shows `status`. Matching by title

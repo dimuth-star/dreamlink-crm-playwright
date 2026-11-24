@@ -414,6 +414,11 @@ const SELECTORS = {
   leadTaskRows: "div.dl-tasks-group div.grid-row",
   leadTaskStatusPills: "span.dl-task-status-pill",
   leadAssignTasksBtn: 'button[data-action="assign-tasks"]',
+  leadTaskTitleCell: ".dl-task-col-title",
+  // header action on a Paused lead (tasks marked "Unable to Continue")
+  leadResumeWorkflowBtn: 'button[data-label="Resume%20Workflow"]:visible',
+  resumeWorkflowModal: ".modal.fade.show",
+  resumeWorkflowConfirmBtn: ".modal.fade.show button.btn-modal-primary",
 
   // Assign Tasks modal (lead detail)
   assignTasksUserInput: '.modal.fade.show input[data-fieldname="dl_user"]',

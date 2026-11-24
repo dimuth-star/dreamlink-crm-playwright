@@ -14,6 +14,7 @@
     "test:criteriasets": "npx playwright test tests/specs/criteriaSets.spec.js --headed --workers=1",
     "test:papergroups": "npx playwright test tests/specs/paperGroups.spec.js --headed --workers=1",
     "test:e2e:fo": "npx playwright test --config playwright.e2e.config.js --grep @fo-setup --workers=1 && npx wdio run mobile/wdio.conf.js && npx playwright test --config playwright.e2e.config.js --grep @fo-verify --workers=1",
+    "test:e2e:fo:utc": "npx playwright test --config playwright.e2e.config.js --grep @fu-setup --workers=1 && npx wdio run mobile/wdio.unableToContinue.conf.js && npx playwright test --config playwright.e2e.config.js --grep @fu-verify --workers=1",
     "test:form-rules": "node tests/unit/formAnswerRules.check.js",
     "test:search-keywords": "node tests/unit/searchKeywords.check.js",
     "report": "npx playwright show-report",

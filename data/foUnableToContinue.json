@@ -1,0 +1,31 @@
+{
+  "stateFile": "foUnableToContinue.json",
+  "upload": {
+    "baseName": "E2E UTC",
+    "groupCount": 2
+  },
+  "scenarios": {
+    "incorrectInformation": {
+      "reason": "Incorrect information"
+    },
+    "groupDoesNotExist": {
+      "reason": "Group does not exist"
+    }
+  },
+  "mobile": {
+    "toasts": {
+      "scheduled": "Task completion date scheduled successfully.",
+      "inProgress": "Task marked as in progress successfully.",
+      "unableToContinue": "Task and 5 related tasks marked as Unable to Continue successfully."
+    },
+    "unableToContinueStatus": "Unable to Continue"
+  },
+  "statuses": {
+    "unableToContinue": "Unable to Continue",
+    "inProgress": "In Progress",
+    "assigned": "Assigned"
+  },
+  "resumeDialog": {
+    "title": "Resume Paused FAST Loan Request"
+  }
+}
