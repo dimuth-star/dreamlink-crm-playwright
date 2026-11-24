@@ -37,7 +37,10 @@ Config lives in `playwright.config.js`:
 - `env/vfdev.env` — **VF Dev** (`BASE_URL=https://crm-zambia.dev.vfconnect.org`, SA `sa2.test@vfconnect.org`
   shown as "sa2 test", FO `fo.test@vfconnect.org` shown as "fo test", dev app `com.dreamlink.agent.dev`
   from `C:/crm_automation/apps/dreamlink-agent-dev.apk`, installed next to the QA app). Select it with
-  `TEST_ENV=vfdev`; Playwright and WebdriverIO both honour it. Its CRM runs v0.2.0-alpha builds.
+  `TEST_ENV=vfdev`; Playwright and WebdriverIO both honour it. Its CRM runs v0.2.0-alpha builds, the
+  **newer** version (QA follows later): keep every test valid on both. `CLASSIFY_GROUPS=false` there turns
+  TC-CL-02/03 off (they classify real groups, which creates leads / pre leads and cannot be undone);
+  `classificationAllowed()` in `util/helpers.js` reads it, and environments without the key run them.
 - `env/stag.env` — **placeholder only** (`BASE_URL=https://www.daraz.lk`). Do not target it
   until it points at a real staging tenant.
 - `env/` is git-ignored, so these files exist locally only. Never commit credentials and never

@@ -65,6 +65,12 @@ function getFoAssignee() {
   return { username, displayName };
 }
 
+// TC-CL-02/03 classify a real DreamSave group, which creates a lead / pre lead and cannot be undone.
+// An environment whose groups must not be changed sets CLASSIFY_GROUPS=false in its env file.
+function classificationAllowed() {
+  return process.env.CLASSIFY_GROUPS !== "false";
+}
+
 function missingFoEnv() {
   return FO_REQUIRED_ENV.filter((key) => !process.env[key]);
 }
@@ -75,5 +81,6 @@ module.exports = {
   getFoApp,
   getFoCredentials,
   getFoAssignee,
+  classificationAllowed,
   missingFoEnv,
 };

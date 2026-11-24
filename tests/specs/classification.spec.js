@@ -9,7 +9,7 @@ const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { PreLeadsPage } = require("../../pages/preLeads/PreLeadsPage");
 const { PreLeadsSearchBar } = require("../../pages/preLeads/PreLeadsSearchBar");
 const { PreLeadDetailPage } = require("../../pages/preLeads/PreLeadDetailPage");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, classificationAllowed } = require("../../util/helpers");
 const groupsData = require("../../data/groups.json");
 const preLeadsData = require("../../data/preLeads.json");
 
@@ -75,6 +75,10 @@ test.describe("DreamLink CRM - Run Classification", () => {
     "TC-CL-02 | Running classification on a fully eligible group creates a lead with 6 assigned tasks",
     { retries: 0 },
     async ({ page }) => {
+      test.skip(
+        !classificationAllowed(),
+        "Classification is turned off for this environment (CLASSIFY_GROUPS=false): it changes real groups",
+      );
       const candidate = await groupsPage.findClassificationCandidate(
         groupsData.fullyEligibleSearch,
         groupsData.classificationCandidate,
@@ -119,6 +123,10 @@ test.describe("DreamLink CRM - Run Classification", () => {
     "TC-CL-03 | Running classification on a data correction group creates a pre lead with correct group information task assigned",
     { retries: 0 },
     async ({ page }) => {
+      test.skip(
+        !classificationAllowed(),
+        "Classification is turned off for this environment (CLASSIFY_GROUPS=false): it changes real groups",
+      );
       const candidate = await groupsPage.findClassificationCandidate(
         groupsData.dataCorrectionSearch,
         groupsData.classificationCandidate,
