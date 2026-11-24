@@ -93,21 +93,23 @@ class PaperGroupDetailPage extends BasePage {
   }
 
   // The saved value, whether Village is still an input or shown read-only:
-  // after a reload a freshly imported group can be locked again as a draft.
+  // after a reload a freshly imported group can be locked again as a draft, and the lock
+  // can arrive after the form first renders editable, so re-read whichever is showing.
   async expectVillage(village) {
-    await this.villageInput.or(this.villageValue).first().waitFor({
-      state: "visible",
-      timeout: TIMEOUTS.default,
-    });
-    if (await this.villageInput.isVisible()) {
-      await expect(this.villageInput).toHaveValue(village, {
-        timeout: TIMEOUTS.default,
-      });
-    } else {
-      await expect(this.villageValue).toHaveText(village, {
-        timeout: TIMEOUTS.default,
-      });
-    }
+    await expect
+      .poll(
+        async () => {
+          if (await this.villageInput.isVisible()) {
+            return this.villageInput.inputValue();
+          }
+          if (await this.villageValue.isVisible()) {
+            return (await this.villageValue.innerText()).trim();
+          }
+          return null;
+        },
+        { message: "saved Village value", timeout: TIMEOUTS.default },
+      )
+      .toBe(village);
   }
 
   async expectDeletedToast(groupName, messageSuffix) {
