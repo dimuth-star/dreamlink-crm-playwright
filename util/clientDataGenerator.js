@@ -49,12 +49,13 @@ const randomNrc = () =>
   uniqueId(() => `${randomDigits(6)}/${randomDigits(2)}/1`);
 // ZRA taxpayer identification number: 10 digits
 const randomTpin = () => uniqueId(() => randomDigits(10));
-// Zambian mobile in the +260 format the forms require: Zamtel 95, MTN 96/76, Airtel 97/77, then 7 digits
-const MOBILE_PREFIXES = ["95", "96", "97", "76", "77"];
-const randomMobile = () =>
+// Zambian mobile in the +260 format the forms require: +260, an operator prefix, then 7 digits.
+// The forms validate the prefix and the accepted set differs per environment (VF Dev: 97, 77, 96, 67),
+// so the prefixes come from the fixture (client.mobilePrefixes): only ones every environment accepts.
+const randomMobile = (prefixes) =>
   uniqueId(
     () =>
-      `+260${pickRandom(MOBILE_PREFIXES)}${Array.from({ length: 7 }, () => randomInt(0, 9)).join("")}`,
+      `+260${pickRandom(prefixes)}${Array.from({ length: 7 }, () => randomInt(0, 9)).join("")}`,
   );
 
 // A random first name, surname or "First Last" from the fixture's name lists (client.names).

@@ -455,7 +455,8 @@ Run with `npm run test:e2e:fo` (three steps chained with `&&`):
   question title **and** type; a rule overrides a prefilled value, prefilled values are kept only when no rule covers
   them. `{{members}}` / `{{mobileIntl}}` come from the `upload` block, so they always match the uploaded group.
   Person data is generated per question: names (First Name, Surname, Next of Kin Name, Facilitator) from
-  `client.names`; NRC (`######/##/1`), TPIN (10 digits) and mobile (`+260` 95/96/97/76/77 + 7 digits) are random and
+  `client.names`; NRC (`######/##/1`), TPIN (10 digits) and mobile (`+260` + a prefix from `client.mobilePrefixes` + 7 digits; 96/97/77, the ones every environment's form
+  validator accepts: VF Dev only takes 97/77/96/67) are random and
   **unique within a run**; Date of Birth gives a random age in `client.dobAgeYears` (25–55). The group's own data
   stays fixed so it matches CRM: the main contact's phone (`{{mobileIntl}}`, never handed to a person) and the
   district (`{{district}}`). Group opening date = 2 months before the run date. Addresses use

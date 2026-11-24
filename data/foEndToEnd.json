@@ -45,6 +45,7 @@
   },
   "client": {
     "idType": "NRC",
+    "mobilePrefixes": ["96", "97", "77"],
     "dobAgeYears": { "min": 25, "max": 55 },
     "dobExtraDays": 30,
     "names": {
