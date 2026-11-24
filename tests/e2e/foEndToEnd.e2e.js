@@ -23,7 +23,7 @@ const { LeadsPage } = require("../../pages/leads/LeadsPage");
 const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, getFoAssignee } = require("../../util/helpers");
 const {
   buildPaperGroupRows,
   writePaperGroupsFile,
@@ -66,7 +66,7 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
 
   // Leaves one locked group, its lead and 6 tasks on QA by design (assessed groups cannot be deleted).
   test(
-    "TC-FO-01 | Verification Ready group is assessed, its lead gets 6 tasks and all are assigned to fo.zambia @fo-setup",
+    "TC-FO-01 | Verification Ready group is assessed, its lead gets 6 tasks and all are assigned to the Field Officer @fo-setup",
     { retries: 0 },
     async ({ page }, testInfo) => {
       const { upload, assessment, assignment } = foData;
@@ -134,14 +134,18 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
         assessment.unassignedStatus,
       );
 
-      // Assign all tasks to fo.zambia
+      // Assign all tasks to the Field Officer who signs in to the app
+      const fieldOfficer = getFoAssignee();
       await leadDetailPage.clickAssignTasks();
       await assignTasksModal.expectOpen();
-      await assignTasksModal.selectUser(assignment.searchTerm);
+      await assignTasksModal.selectUser(fieldOfficer.username);
       await assignTasksModal.clickAssign();
-      await assignTasksModal.expectConfirmationFor(assignment.userName);
+      await assignTasksModal.expectConfirmationFor(fieldOfficer.displayName);
       await assignTasksModal.confirm();
-      await assignTasksModal.expectAssignedToast(assignment.successMessage);
+      await assignTasksModal.expectAssignedToast(
+        assignment.successMessagePrefix,
+        fieldOfficer.displayName,
+      );
       await leadDetailPage.reload();
       await leadDetailPage.expectAllTasksStatus(
         assessment.taskCount,
@@ -149,7 +153,7 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
       );
       await leadDetailPage.expectAllTasksAssignedTo(
         assessment.taskCount,
-        assignment.userName,
+        fieldOfficer.displayName,
       );
 
       // Hand the group over to the mobile step
@@ -158,7 +162,8 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
   );
 
   test("TC-FO-03 | All 6 tasks completed in the Field Officer app sync back to CRM as Completed @fo-verify", async () => {
-    const { assessment, assignment } = foData;
+    const { assessment } = foData;
+    const fieldOfficer = getFoAssignee();
     const { groupName } = readRunState();
     await leadsPage.open();
     await leadsSearchBar.searchBySavingGroup(groupName);
@@ -174,7 +179,7 @@ test.describe("DreamLink CRM - Field Officer end-to-end", () => {
     );
     await leadDetailPage.expectTasksStatusEventually(
       taskTitles,
-      assignment.userName,
+      fieldOfficer.displayName,
     );
   });
 });

@@ -50,9 +50,7 @@
     "assignedStatus": "Assigned"
   },
   "assignment": {
-    "searchTerm": "fo.zambia",
-    "userName": "FO Zambia",
-    "successMessage": "Tasks successfully assigned to FO Zambia."
+    "successMessagePrefix": "Tasks successfully assigned to"
   },
   "editGroup": {
     "village": "QA Village Edited"

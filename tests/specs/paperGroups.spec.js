@@ -20,7 +20,7 @@ const { LeadsPage } = require("../../pages/leads/LeadsPage");
 const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
-const { getCredentials } = require("../../util/helpers");
+const { getCredentials, getFoAssignee } = require("../../util/helpers");
 const { noMatchKeyword } = require("../../util/searchKeywords");
 const {
   buildPaperGroupRows,
@@ -388,12 +388,12 @@ test.describe("DreamLink CRM - Paper Groups", () => {
       );
     });
 
-    test("TC-PG-08 | Assigning the lead's 6 tasks to fo.zambia marks every task Assigned to FO Zambia", async ({
+    test("TC-PG-08 | Assigning the lead's 6 tasks to the Field Officer marks every task Assigned to them", async ({
       page,
     }) => {
       const data = paperGroupsData.assessment;
-      const { searchTerm, userName, successMessage } =
-        paperGroupsData.assignment;
+      const { successMessagePrefix } = paperGroupsData.assignment;
+      const fieldOfficer = getFoAssignee();
       await leadsPage.open();
       await leadsSearchBar.searchBySavingGroup(assessedGroupName);
       await leadsPage.expectLeadRowVisible();
@@ -402,11 +402,14 @@ test.describe("DreamLink CRM - Paper Groups", () => {
 
       await leadDetailPage.clickAssignTasks();
       await assignTasksModal.expectOpen();
-      await assignTasksModal.selectUser(searchTerm);
+      await assignTasksModal.selectUser(fieldOfficer.username);
       await assignTasksModal.clickAssign();
-      await assignTasksModal.expectConfirmationFor(userName);
+      await assignTasksModal.expectConfirmationFor(fieldOfficer.displayName);
       await assignTasksModal.confirm();
-      await assignTasksModal.expectAssignedToast(successMessage);
+      await assignTasksModal.expectAssignedToast(
+        successMessagePrefix,
+        fieldOfficer.displayName,
+      );
 
       await leadDetailPage.reload();
       await leadDetailPage.expectTaskCount(data.leadTaskCount);
@@ -416,7 +419,7 @@ test.describe("DreamLink CRM - Paper Groups", () => {
       );
       await leadDetailPage.expectAllTasksAssignedTo(
         data.leadTaskCount,
-        userName,
+        fieldOfficer.displayName,
       );
     });
   });

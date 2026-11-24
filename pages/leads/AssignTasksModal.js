@@ -67,7 +67,9 @@ class AssignTasksModal extends BasePage {
     });
   }
 
-  async expectAssignedToast(successMessage) {
+  // e.g. "Tasks successfully assigned to FO Zambia."
+  async expectAssignedToast(successMessagePrefix, userName) {
+    const successMessage = `${successMessagePrefix} ${userName}.`;
     await expect(
       this.toasts.filter({ hasText: successMessage }).first(),
     ).toBeVisible({ timeout: TIMEOUTS.default });
