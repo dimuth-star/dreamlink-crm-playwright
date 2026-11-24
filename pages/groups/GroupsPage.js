@@ -243,11 +243,18 @@ class GroupsPage extends BasePage {
       state: "visible",
       timeout: TIMEOUTS.default,
     });
-    await this.eligibilityScoreFilter.fill(String(score));
-    // settled once every listed row shows the score (an empty result has no rows)
-    await expect(
-      this.groupListRow.filter({ hasNotText: scoreBadge }),
-    ).toHaveCount(0, { timeout: TIMEOUTS.default });
+    // The list can re-render its filter bar while still loading and wipe what was typed (seen on
+    // VF Dev), leaving the list unfiltered: type again until the value stays and the list has applied
+    // it, i.e. every listed row shows the score (an empty result has no rows).
+    await expect(async () => {
+      await this.eligibilityScoreFilter.fill(String(score));
+      await expect(this.eligibilityScoreFilter).toHaveValue(String(score), {
+        timeout: TIMEOUTS.shortWait,
+      });
+      await expect(
+        this.groupListRow.filter({ hasNotText: scoreBadge }),
+      ).toHaveCount(0, { timeout: TIMEOUTS.shortWait });
+    }).toPass({ timeout: TIMEOUTS.default });
   }
 
   // Product lines on the loaded page with this score badge and status badge.
