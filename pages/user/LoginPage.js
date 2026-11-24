@@ -46,25 +46,32 @@ class LoginPage {
     await this.page.waitForLoadState("domcontentloaded");
   }
 
+  // On "/": signed out shows "Proceed to Login", signed in shows the DreamLink app link. Waits for
+  // whichever appears instead of checking once (isVisible does not wait), so a slow page is not misread.
   async isLoggedIn() {
-    return this.dreamLinkApp.isVisible({ timeout: 3000 }).catch(() => false);
+    await this.proceedToLoginBtn
+      .or(this.dreamLinkApp)
+      .first()
+      .waitFor({ state: "visible", timeout: TIMEOUTS.navigation });
+    return this.dreamLinkApp.isVisible();
   }
 
+  // Each attempt starts by reading the state: an attempt whose check timed out may still have signed
+  // in (QA can take over 20 s to render the desk after login), and then the next attempt just returns
+  // instead of looking for a "Proceed to Login" link that a signed-in session no longer shows.
   async login(username, password) {
-    if (await this.isLoggedIn()) return;
-
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (await this.isLoggedIn()) return;
       try {
         await this.clickProceedToLogin();
         await this.submitCredentials(username, password);
         await expect(this.dreamLinkApp).toBeVisible({
-          timeout: TIMEOUTS.default,
+          timeout: TIMEOUTS.navigation,
         });
         return;
       } catch (error) {
         if (attempt === 1) throw error;
-        await this.page.goto("/");
-        await this.page.waitForLoadState("domcontentloaded");
+        await this.open();
       }
     }
   }
