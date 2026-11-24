@@ -72,6 +72,76 @@ class GroupsPage extends BasePage {
     return (await firstName.innerText()).trim();
   }
 
+  // A non-empty value of this column from the first listed row that has one.
+  async readFirstCellValue(cellSelector, label) {
+    const cell = this.groupListRow
+      .locator(cellSelector)
+      .filter({ hasText: /\S/ })
+      .first();
+    await expect(
+      cell,
+      `DreamSave Groups list shows no ${label}: nothing to search for`,
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await cell.innerText()).trim();
+  }
+
+  async readFirstGroupNumber() {
+    return this.readFirstCellValue(SELECTORS.groupNumberCell, "group number");
+  }
+
+  async readFirstMeetingLocation() {
+    return this.readFirstCellValue(
+      SELECTORS.groupMeetingLocationCell,
+      "meeting location",
+    );
+  }
+
+  async readFirstPartner() {
+    return this.readFirstCellValue(SELECTORS.groupPartnerCell, "partner");
+  }
+
+  // From the first row with a product line: its partner and the first product's
+  // name, score badge ("7/7") and status ("Fully Eligible").
+  async readFirstProductEligibility() {
+    const row = this.groupListRow
+      .filter({ has: this.page.locator(SELECTORS.groupProductLine) })
+      .first();
+    await expect(
+      row,
+      "DreamSave Groups list shows no product eligibility: nothing to search for",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const line = row.locator(SELECTORS.groupProductLine).first();
+    // the product name is the line's leading text, before the badges
+    const productName = await line.evaluate((el) =>
+      el.firstChild.textContent.trim(),
+    );
+    const scoreBadge = await line
+      .locator(SELECTORS.groupProductScoreBadge)
+      .innerText();
+    const status = await line
+      .locator(SELECTORS.groupProductStatusBadge)
+      .getAttribute("title");
+    const partner = await row.locator(SELECTORS.groupPartnerCell).innerText();
+    return {
+      partner: partner.trim(),
+      productName,
+      scoreBadge: scoreBadge.trim(),
+      status,
+    };
+  }
+
+  // The list total from the pager ("1–20 of 148" -> "148").
+  async readTotalCount() {
+    await this.groupListRow.first().waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await expect(this.recordCount).toContainText(" of ", {
+      timeout: TIMEOUTS.default,
+    });
+    return (await this.recordCount.innerText()).split(" of ").pop().trim();
+  }
+
   // A word shared by at least two group names on the loaded page, for a search expected to match several.
   async readBroadKeyword() {
     const names = this.groupListRow.locator(SELECTORS.groupNameLink);

@@ -2,6 +2,9 @@ const { test } = require("@playwright/test");
 const { LoginPage } = require("../../pages/user/LoginPage");
 const { PaperGroupsPage } = require("../../pages/paperGroups/PaperGroupsPage");
 const {
+  PaperGroupsSearchBar,
+} = require("../../pages/paperGroups/PaperGroupsSearchBar");
+const {
   PaperGroupUploadModal,
 } = require("../../pages/paperGroups/PaperGroupUploadModal");
 const {
@@ -18,6 +21,7 @@ const { LeadsSearchBar } = require("../../pages/leads/LeadsSearchBar");
 const { LeadDetailPage } = require("../../pages/leads/LeadDetailPage");
 const { AssignTasksModal } = require("../../pages/leads/AssignTasksModal");
 const { getCredentials } = require("../../util/helpers");
+const { noMatchKeyword } = require("../../util/searchKeywords");
 const {
   buildPaperGroupRows,
   writePaperGroupsFile,
@@ -27,6 +31,7 @@ const paperGroupsData = require("../../data/paperGroups.json");
 test.describe("DreamLink CRM - Paper Groups", () => {
   let loginPage;
   let paperGroupsPage;
+  let paperGroupsSearchBar;
   let uploadModal;
   let reviewModal;
   let detailPage;
@@ -40,6 +45,7 @@ test.describe("DreamLink CRM - Paper Groups", () => {
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
     paperGroupsPage = new PaperGroupsPage(page);
+    paperGroupsSearchBar = new PaperGroupsSearchBar(page);
     uploadModal = new PaperGroupUploadModal(page);
     reviewModal = new PaperGroupImportReviewModal(page);
     detailPage = new PaperGroupDetailPage(page);
@@ -79,6 +85,113 @@ test.describe("DreamLink CRM - Paper Groups", () => {
   });
 
   // TC-PG-03..05 share one uploaded batch, so they run in order: create -> edit -> delete.
+  test("TC-PG-09 | Searching a group name read from the list returns that group and only matching rows", async ({
+    page,
+  }) => {
+    const groupName = await paperGroupsPage.getFirstGroupName();
+    await paperGroupsPage.searchByGroupName(groupName);
+    await paperGroupsSearchBar.expectAllGroupNamesContain(groupName);
+    await paperGroupsSearchBar.expectGroupListed(groupName);
+  });
+
+  test("TC-PG-10 | Searching a region read from the list returns only groups in that region", async ({
+    page,
+  }) => {
+    const region = await paperGroupsPage.readFirstRegion();
+    await paperGroupsSearchBar.searchByRegion(region);
+    await paperGroupsSearchBar.expectAllRegionsContain(region);
+  });
+
+  test("TC-PG-11 | Searching a village read from the list returns only groups in that village", async ({
+    page,
+  }) => {
+    const village = await paperGroupsPage.readFirstVillage();
+    await paperGroupsSearchBar.searchByVillage(village);
+    await paperGroupsSearchBar.expectAllVillagesContain(village);
+  });
+
+  test("TC-PG-12 | Searching a district read from the list returns only groups in that district", async ({
+    page,
+  }) => {
+    const district = await paperGroupsPage.readFirstDistrict();
+    await paperGroupsSearchBar.searchByDistrict(district);
+    await paperGroupsSearchBar.expectAllDistrictsContain(district);
+  });
+
+  test("TC-PG-13 | Filtering by a classification read from the list returns only groups with that classification", async ({
+    page,
+  }) => {
+    const classification = await paperGroupsPage.readFirstClassification();
+    await paperGroupsSearchBar.filterByClassification(classification);
+    await paperGroupsSearchBar.expectAllClassifications(classification);
+  });
+
+  test("TC-PG-14 | Filtering by the imported batch of a listed group returns only groups from that file", async ({
+    page,
+  }) => {
+    const fileName = await paperGroupsPage.readFirstImportedList();
+    await paperGroupsSearchBar.searchByImportedList(fileName);
+    await paperGroupsSearchBar.expectAllImportedLists(fileName);
+  });
+
+  test("TC-PG-15 | Filtering by Duplicate Warning returns only groups marked Duplicate", async ({
+    page,
+  }) => {
+    await paperGroupsSearchBar.showDuplicatesOnly();
+    await paperGroupsSearchBar.expectAllMarkedDuplicate(
+      paperGroupsData.duplicateLabel,
+    );
+  });
+
+  test("TC-PG-16 | Selecting a partner chip lists as many groups as the chip's imported count", async ({
+    page,
+  }) => {
+    const { partner, count } = await paperGroupsPage.readFirstPartnerChip();
+    await paperGroupsSearchBar.selectPartnerChip(partner);
+    await paperGroupsSearchBar.expectTotalCount(count);
+  });
+
+  test("TC-PG-17 | A non-existent value in each text filter (group name, region, village, district) displays the no results message", async ({
+    page,
+  }) => {
+    const { keywordPrefix, textFilters } = paperGroupsData.invalidSearch;
+    for (const filterKey of textFilters) {
+      // fresh list each time: the previous empty state would satisfy the check
+      await paperGroupsPage.open();
+      await paperGroupsPage.expectLoaded();
+      await paperGroupsSearchBar.searchByTextFilter(
+        filterKey,
+        noMatchKeyword(keywordPrefix),
+      );
+      await paperGroupsPage.expectNoResults(paperGroupsData.noResultsMessage);
+    }
+  });
+
+  test("TC-PG-18 | Combining region, village and district read from the same group returns only groups matching all three", async ({
+    page,
+  }) => {
+    const { region, village, district } =
+      await paperGroupsPage.readFirstLocation();
+    await paperGroupsSearchBar.searchByRegion(region);
+    await paperGroupsSearchBar.searchByVillage(village);
+    await paperGroupsSearchBar.searchByDistrict(district);
+    await paperGroupsSearchBar.expectAllRegionsContain(region);
+    await paperGroupsSearchBar.expectAllVillagesContain(village);
+    await paperGroupsSearchBar.expectAllDistrictsContain(district);
+  });
+
+  test("TC-PG-19 | Clear All Filters after a combined search restores the full Paper Groups list", async ({
+    page,
+  }) => {
+    const totalCount = await paperGroupsPage.readTotalCount();
+    const { region, village } = await paperGroupsPage.readFirstLocation();
+    await paperGroupsSearchBar.searchByRegion(region);
+    await paperGroupsSearchBar.searchByVillage(village);
+    await paperGroupsSearchBar.expectAllVillagesContain(village);
+    await paperGroupsSearchBar.clearAllFilters();
+    await paperGroupsSearchBar.expectFullListRestored(totalCount);
+  });
+
   test.describe.serial("Paper Group lifecycle", () => {
     let runPrefix;
     let groupNames = [];

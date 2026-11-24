@@ -18,7 +18,12 @@ class PaperGroupsPage extends BasePage {
     this.noResultsMessage = page.locator(SELECTORS.deskNoResultsMessage);
     this.loadingIndicator = page.locator(SELECTORS.deskLoadingIndicator);
     this.firstRow = page.locator(SELECTORS.deskListRow).first();
-    this.firstRowCheckbox = page.locator(SELECTORS.paperGroupRowCheckbox).first();
+    this.listRow = page.locator(SELECTORS.deskListRow);
+    this.recordCount = page.locator(SELECTORS.recordCount);
+    this.partnerChip = page.locator(SELECTORS.paperGroupPartnerChip);
+    this.firstRowCheckbox = page
+      .locator(SELECTORS.paperGroupRowCheckbox)
+      .first();
     this.actionsBtn = page.locator(SELECTORS.classificationActionsBtn);
     this.startAssessmentItem = page
       .locator(SELECTORS.paperGroupActionsMenuItem)
@@ -144,6 +149,102 @@ class PaperGroupsPage extends BasePage {
 
   async getVisibleGroupCount() {
     return this.groupNameLinks.count();
+  }
+
+  // A non-empty value of this column from the first listed row that has one.
+  async readFirstCellValue(cellSelector, label) {
+    const cell = this.listRow
+      .locator(cellSelector)
+      .filter({ hasText: /\S/ })
+      .first();
+    await expect(
+      cell,
+      `Paper Groups list shows no ${label}: nothing to search for`,
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    return (await cell.innerText()).trim();
+  }
+
+  async readFirstRegion() {
+    return this.readFirstCellValue(SELECTORS.paperGroupRegionCell, "region");
+  }
+
+  async readFirstVillage() {
+    return this.readFirstCellValue(SELECTORS.paperGroupVillageCell, "village");
+  }
+
+  async readFirstDistrict() {
+    return this.readFirstCellValue(
+      SELECTORS.paperGroupDistrictCell,
+      "district",
+    );
+  }
+
+  async readFirstClassification() {
+    return this.readFirstCellValue(
+      SELECTORS.paperGroupClassificationCell,
+      "classification",
+    );
+  }
+
+  async readFirstImportedList() {
+    return this.readFirstCellValue(
+      SELECTORS.paperGroupImportedListCell,
+      "imported list",
+    );
+  }
+
+  // Region, village and district of the first row that has all three.
+  async readFirstLocation() {
+    const nonEmpty = (cellSelector) => ({
+      has: this.page.locator(cellSelector).filter({ hasText: /\S/ }),
+    });
+    const row = this.listRow
+      .filter(nonEmpty(SELECTORS.paperGroupRegionCell))
+      .filter(nonEmpty(SELECTORS.paperGroupVillageCell))
+      .filter(nonEmpty(SELECTORS.paperGroupDistrictCell))
+      .first();
+    await expect(
+      row,
+      "Paper Groups list shows no row with region, village and district",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const text = async (cellSelector) =>
+      (await row.locator(cellSelector).innerText()).trim();
+    return {
+      region: await text(SELECTORS.paperGroupRegionCell),
+      village: await text(SELECTORS.paperGroupVillageCell),
+      district: await text(SELECTORS.paperGroupDistrictCell),
+    };
+  }
+
+  // The first partner chip after "All partners": its label and "<n> imported" count.
+  async readFirstPartnerChip() {
+    const chip = this.partnerChip.nth(1);
+    await expect(
+      chip,
+      "Paper Groups shows no partner chip: no partner has imported groups",
+    ).toBeVisible({ timeout: TIMEOUTS.default });
+    const label = await chip
+      .locator(SELECTORS.paperGroupPartnerChipLabel)
+      .innerText();
+    const count = await chip
+      .locator(SELECTORS.paperGroupPartnerChipCount)
+      .innerText();
+    return {
+      partner: label.trim(),
+      count: Number(count.replace(/\D/g, "")),
+    };
+  }
+
+  // The list total from the pager ("1–20 of 18,160" -> "18,160").
+  async readTotalCount() {
+    await this.listRow.first().waitFor({
+      state: "visible",
+      timeout: TIMEOUTS.default,
+    });
+    await expect(this.recordCount).toContainText(" of ", {
+      timeout: TIMEOUTS.default,
+    });
+    return (await this.recordCount.innerText()).split(" of ").pop().trim();
   }
 
   async getFirstGroupName() {
