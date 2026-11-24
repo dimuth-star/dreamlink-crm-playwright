@@ -34,7 +34,8 @@ exports.config = {
   runner: "local",
   hostname: "127.0.0.1",
   port: APPIUM_PORT,
-  specs: [path.join(__dirname, "specs", "**", "*.e2e.js")],
+  // the happy path only: other flows (e.g. wdio.unableToContinue.conf.js) name their own spec
+  specs: [path.join(__dirname, "specs", "foTaskCompletion.e2e.js")],
   maxInstances: 1,
   capabilities: [
     {

@@ -17,7 +17,13 @@ const MOBILE_TIMEOUTS = {
 // App UI copy the selectors and the page-source classifier match on (single source for both).
 const MOBILE_TEXT = {
   // My Tasks section headers, in pager order (left to right)
-  taskSections: ["Newly Assigned", "To Do", "In Progress", "Completed"],
+  taskSections: [
+    "Newly Assigned",
+    "To Do",
+    "In Progress",
+    "Completed",
+    "Unable to Continue",
+  ],
   cardSeparator: " · ",
   cardTaskType: "Client Assessment",
   getLocation: "Get Current Location",
@@ -27,6 +33,12 @@ const MOBILE_TEXT = {
   dropdownSelect: "Select",
   clear: "Clear",
   formComplete: "Complete",
+  // Task detail -> More actions -> "Unable to Continue" sheet (curly quotes are part of the app copy)
+  unableToContinueMenuItem: "Mark Task as “Unable to Continue”",
+  unableToContinueQuestion:
+    "Are you sure you want to mark this task as Unable to Continue?",
+  selectReason: "Select a reason",
+  unableToContinueConfirm: "Yes, mark as “Unable to Continue”",
 };
 
 const ANDROID_CLASS = {
@@ -100,6 +112,14 @@ const MOBILE = {
   formRowViewBtn: '//*[@content-desc="View"]',
   statusText: (status) => `//*[@text="${status}"]`,
   toastText: (text) => `//*[contains(@text,"${text}")]`,
+  // More actions (3 dots, next to "Mark as completed"; only on a started task) -> Unable to Continue sheet
+  moreActionsBtn: '//*[@content-desc="More actions"]',
+  unableToContinueMenuItem: `//*[contains(@content-desc,"${MOBILE_TEXT.unableToContinueMenuItem}")]`,
+  unableToContinueQuestion: `//*[@text="${MOBILE_TEXT.unableToContinueQuestion}"]`,
+  // the reason field's content-desc is "<shown value>, ": "Select a reason, " until a reason is picked
+  reasonField: (shown) => `//*[starts-with(@content-desc,"${shown},")]`,
+  reasonOption: (reason) => `//*[@content-desc="${reason}"]`,
+  unableToContinueConfirmBtn: `//android.widget.Button[@content-desc="${MOBILE_TEXT.unableToContinueConfirm}"]`,
 
   // SurveyJS form (rendered in a WebView, exposed through the accessibility tree)
   surveyContainer: '//*[@resource-id="surveyContainer"]',
